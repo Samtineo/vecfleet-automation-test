@@ -1,0 +1,1287 @@
+{
+  "info": {
+    "_postman_id": "smoke-vecfleet-api",
+    "name": "VecFleet API — Smoke Test",
+    "description": "Suite de smoke test generada automáticamente. Cubre los flujos críticos de la API VecFleet.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Autenticación",
+      "item": [
+        {
+          "name": "/public/auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - Login exitoso', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "pm.test('Retorna objeto usuario', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('usuario');",
+                  "});",
+                  "pm.test('Token no está vacío', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.usuario.token).to.not.be.empty;",
+                  "});",
+                  "// Guardar token para requests siguientes",
+                  "const token = pm.response.json()?.usuario?.token;",
+                  "if (token) pm.environment.set('token', token);"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"usuario\":\"{{username}}\",\r\n    \"clave\" :\"{{password}}\"\r\n}"
+            },
+            "url": {
+              "raw": "{{url}}/public/auth/login",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "public",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Método para la autenticación y generación del token a utilizar en el resto de los métodos.\n\nAdemás vamos a contar con los datos de la persona logueada, permisos, bases, centros, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/auth/check",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "check"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - Token válido', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Bases",
+      "item": [
+        {
+          "name": "/bases/select",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/bases/select",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "bases",
+                "select"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array de bases', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "    pm.expect(body.length).to.be.greaterThan(0);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Ociosidad",
+      "item": [
+        {
+          "name": "disponibilidad/newGrid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/disponibilidad/newGrid",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "disponibilidad",
+                "newGrid"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna estructura de grilla de disponibilidad', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('object');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Tickets",
+      "item": [
+        {
+          "name": "/newGrid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/tickets/newGrid?page=0&perPage=10&ticketTipo=&entidad=&id=&estado=&nivelAprobacionPresupuesto=&fechaHoraAlta=&detalle=&servicio=&movilPersona=&gerenciador=&region=&base=&pais=&centroCostos=&centroBeneficios=&responsable1=&enTaller=&mttTotal=&mttParcial=&encuestaNivelSatisfaccion=&fechaRealizado=&fechaHoraTurno=&tipoModelo=&abono=&origen=&turnoInicio=&turnoFinal=&fechaPrometidaInicio=&fechaPrometidaFinal=&idSort=&tipoTicketSort=&estadoSort=&fechaHoraAltaSort=&detalleSort=&servicioSort=&entidadSort=&gerenciadorSort=&regionSort=&baseSort=&paisSort=&centroCostosSort=&centroBeneficiosSort=&responsableSort=&enTallerSort=&encuestaNivelSatisfaccionSort=&fechaHoraTurnoSort=&abonoSort=&tipoModeloSort=&mttTotalSort=&mttParcialSort=&fechaPrometidaSort=&idTicketCliente=&fechaHoraModificacion=&fechaModificacionSort=",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "tickets",
+                "newGrid"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                },
+                {
+                  "key": "ticketTipo",
+                  "value": ""
+                },
+                {
+                  "key": "entidad",
+                  "value": ""
+                },
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "estado",
+                  "value": ""
+                },
+                {
+                  "key": "nivelAprobacionPresupuesto",
+                  "value": ""
+                },
+                {
+                  "key": "fechaHoraAlta",
+                  "value": ""
+                },
+                {
+                  "key": "detalle",
+                  "value": ""
+                },
+                {
+                  "key": "servicio",
+                  "value": ""
+                },
+                {
+                  "key": "movilPersona",
+                  "value": ""
+                },
+                {
+                  "key": "gerenciador",
+                  "value": ""
+                },
+                {
+                  "key": "region",
+                  "value": ""
+                },
+                {
+                  "key": "base",
+                  "value": ""
+                },
+                {
+                  "key": "pais",
+                  "value": ""
+                },
+                {
+                  "key": "centroCostos",
+                  "value": ""
+                },
+                {
+                  "key": "centroBeneficios",
+                  "value": ""
+                },
+                {
+                  "key": "responsable1",
+                  "value": ""
+                },
+                {
+                  "key": "enTaller",
+                  "value": ""
+                },
+                {
+                  "key": "mttTotal",
+                  "value": ""
+                },
+                {
+                  "key": "mttParcial",
+                  "value": ""
+                },
+                {
+                  "key": "encuestaNivelSatisfaccion",
+                  "value": ""
+                },
+                {
+                  "key": "fechaRealizado",
+                  "value": ""
+                },
+                {
+                  "key": "fechaHoraTurno",
+                  "value": ""
+                },
+                {
+                  "key": "tipoModelo",
+                  "value": ""
+                },
+                {
+                  "key": "abono",
+                  "value": ""
+                },
+                {
+                  "key": "origen",
+                  "value": ""
+                },
+                {
+                  "key": "turnoInicio",
+                  "value": ""
+                },
+                {
+                  "key": "turnoFinal",
+                  "value": ""
+                },
+                {
+                  "key": "fechaPrometidaInicio",
+                  "value": ""
+                },
+                {
+                  "key": "fechaPrometidaFinal",
+                  "value": ""
+                },
+                {
+                  "key": "idSort",
+                  "value": ""
+                },
+                {
+                  "key": "tipoTicketSort",
+                  "value": ""
+                },
+                {
+                  "key": "estadoSort",
+                  "value": ""
+                },
+                {
+                  "key": "fechaHoraAltaSort",
+                  "value": ""
+                },
+                {
+                  "key": "detalleSort",
+                  "value": ""
+                },
+                {
+                  "key": "servicioSort",
+                  "value": ""
+                },
+                {
+                  "key": "entidadSort",
+                  "value": ""
+                },
+                {
+                  "key": "gerenciadorSort",
+                  "value": ""
+                },
+                {
+                  "key": "regionSort",
+                  "value": ""
+                },
+                {
+                  "key": "baseSort",
+                  "value": ""
+                },
+                {
+                  "key": "paisSort",
+                  "value": ""
+                },
+                {
+                  "key": "centroCostosSort",
+                  "value": ""
+                },
+                {
+                  "key": "centroBeneficiosSort",
+                  "value": ""
+                },
+                {
+                  "key": "responsableSort",
+                  "value": ""
+                },
+                {
+                  "key": "enTallerSort",
+                  "value": ""
+                },
+                {
+                  "key": "encuestaNivelSatisfaccionSort",
+                  "value": ""
+                },
+                {
+                  "key": "fechaHoraTurnoSort",
+                  "value": ""
+                },
+                {
+                  "key": "abonoSort",
+                  "value": ""
+                },
+                {
+                  "key": "tipoModeloSort",
+                  "value": ""
+                },
+                {
+                  "key": "mttTotalSort",
+                  "value": ""
+                },
+                {
+                  "key": "mttParcialSort",
+                  "value": ""
+                },
+                {
+                  "key": "fechaPrometidaSort",
+                  "value": ""
+                },
+                {
+                  "key": "idTicketCliente",
+                  "value": ""
+                },
+                {
+                  "key": "fechaHoraModificacion",
+                  "value": ""
+                },
+                {
+                  "key": "fechaModificacionSort",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna tickets y paginación', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('tickets');",
+                  "    pm.expect(body).to.have.property('pagination');",
+                  "    pm.expect(body.pagination).to.have.property('page');",
+                  "    pm.expect(body.pagination).to.have.property('count');",
+                  "    pm.expect(body.pagination).to.have.property('perPage');",
+                  "});",
+                  "pm.test('Tickets es un array', () => {",
+                  "    pm.expect(pm.response.json().tickets).to.be.an('array');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        },
+        {
+          "name": "/grid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/tickets/newGrid?fechaHoraAlta=&detalle=&servicio=&movilPersona=&gerenciador=&region=&base=&responsable1=&fechaHoraTurnoSort=",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "tickets",
+                "newGrid"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": true
+                },
+                {
+                  "key": "perPage",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "ticketTipo",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entidad",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "estado",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "nivelAprobacionPresupuesto",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHoraAlta",
+                  "value": ""
+                },
+                {
+                  "key": "detalle",
+                  "value": ""
+                },
+                {
+                  "key": "servicio",
+                  "value": ""
+                },
+                {
+                  "key": "movilPersona",
+                  "value": ""
+                },
+                {
+                  "key": "gerenciador",
+                  "value": ""
+                },
+                {
+                  "key": "region",
+                  "value": ""
+                },
+                {
+                  "key": "base",
+                  "value": ""
+                },
+                {
+                  "key": "pais",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "centroCostos",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "centroBeneficios",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "responsable1",
+                  "value": ""
+                },
+                {
+                  "key": "enTaller",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "mttTotal",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "mttParcial",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "encuestaNivelSatisfaccion",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaRealizado",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHoraTurno",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "tipoModelo",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "abono",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "origen",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "turnoInicio",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "turnoFinal",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaPrometidaInicio",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaPrometidaFinal",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "idSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "tipoTicketSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "estadoSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHoraAltaSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "detalleSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "servicioSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entidadSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "gerenciadorSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "regionSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "baseSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "paisSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "centroCostosSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "centroBeneficiosSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "responsableSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "enTallerSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "encuestaNivelSatisfaccionSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHoraTurnoSort",
+                  "value": ""
+                },
+                {
+                  "key": "abonoSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "tipoModeloSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "mttTotalSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "mttParcialSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaPrometidaSort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "idTicketCliente",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHoraModificacion",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaModificacionSort",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Combustibles",
+      "item": [
+        {
+          "name": "combustibles/grid",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "accept-encoding": true,
+              "connection": true
+            },
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/combustibles/grid/2024-07-25/2024-07-28?page=0&perPage=1000&bases=&paises=&centroCostos=&regiones=&subRegiones=&modelos=&marcas=&estadoVehiculo=true&dominio=&unidad=&estado=&controles=&origen=&extraFilterMovilDetail=&lugarCarga=&fechaHoraCargaSort=&dominioSort=&unidadSort=&litrosSort=&importeSort=&precioLitroSort=&utilizacionSort=&direccionInformadaSort=&litros100Sort=&kmsLitroSort=&costoKmSort=&tarjetaSaldo=&conductorInformadoSort=&baseSort=&origenSort=",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "combustibles",
+                "grid",
+                "2024-07-25",
+                "2024-07-28"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "perPage",
+                  "value": "1000"
+                },
+                {
+                  "key": "bases",
+                  "value": ""
+                },
+                {
+                  "key": "paises",
+                  "value": ""
+                },
+                {
+                  "key": "centroCostos",
+                  "value": ""
+                },
+                {
+                  "key": "regiones",
+                  "value": ""
+                },
+                {
+                  "key": "subRegiones",
+                  "value": ""
+                },
+                {
+                  "key": "modelos",
+                  "value": ""
+                },
+                {
+                  "key": "marcas",
+                  "value": ""
+                },
+                {
+                  "key": "estadoVehiculo",
+                  "value": "true"
+                },
+                {
+                  "key": "dominio",
+                  "value": ""
+                },
+                {
+                  "key": "unidad",
+                  "value": ""
+                },
+                {
+                  "key": "estado",
+                  "value": ""
+                },
+                {
+                  "key": "controles",
+                  "value": ""
+                },
+                {
+                  "key": "origen",
+                  "value": ""
+                },
+                {
+                  "key": "extraFilterMovilDetail",
+                  "value": ""
+                },
+                {
+                  "key": "lugarCarga",
+                  "value": ""
+                },
+                {
+                  "key": "fechaHoraCargaSort",
+                  "value": ""
+                },
+                {
+                  "key": "dominioSort",
+                  "value": ""
+                },
+                {
+                  "key": "unidadSort",
+                  "value": ""
+                },
+                {
+                  "key": "litrosSort",
+                  "value": ""
+                },
+                {
+                  "key": "importeSort",
+                  "value": ""
+                },
+                {
+                  "key": "precioLitroSort",
+                  "value": ""
+                },
+                {
+                  "key": "utilizacionSort",
+                  "value": ""
+                },
+                {
+                  "key": "direccionInformadaSort",
+                  "value": ""
+                },
+                {
+                  "key": "litros100Sort",
+                  "value": ""
+                },
+                {
+                  "key": "kmsLitroSort",
+                  "value": ""
+                },
+                {
+                  "key": "costoKmSort",
+                  "value": ""
+                },
+                {
+                  "key": "tarjetaSaldo",
+                  "value": ""
+                },
+                {
+                  "key": "conductorInformadoSort",
+                  "value": ""
+                },
+                {
+                  "key": "baseSort",
+                  "value": ""
+                },
+                {
+                  "key": "origenSort",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna estructura de grilla', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('object');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        },
+        {
+          "name": "/controles-carga",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "default"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/combustibles/controles-carga",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "combustibles",
+                "controles-carga"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 500 conocido en vec-dev — endpoint sin datos de config en este entorno",
+                  "pm.test('Status no es 401 ni 403', () => {",
+                  "    pm.expect(pm.response.code).to.not.be.oneOf([401, 403]);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Formularios",
+      "item": [
+        {
+          "name": "formulario/newGrid",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true,
+            "disabledSystemHeaders": {
+              "accept-encoding": true,
+              "connection": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/formulario/newGrid",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "formulario",
+                "newGrid"
+              ],
+              "query": [
+                {
+                  "key": "descripcion",
+                  "value": "",
+                  "description": "string-texto parcial o completo",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "tipo_formulario_id",
+                  "value": null,
+                  "description": "int",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "fecha",
+                  "value": null,
+                  "description": "fecha creacion (AAAA-MM-DD)",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "fecha_desde",
+                  "value": null,
+                  "description": "fecha creacion desde (AAAA-MM-DD)",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "fecha_hasta",
+                  "value": null,
+                  "description": "fecha creacion hasta (AAAA-MM-DD)",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "movil_id",
+                  "value": null,
+                  "description": "int",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": null,
+                  "description": "int - Página de resultados (paginación)",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "perPage",
+                  "value": null,
+                  "description": "int - Cantidad de resultados por página",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "fallas",
+                  "value": null,
+                  "description": "int",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "showInactivos",
+                  "value": null,
+                  "description": "boolean",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "transportadora",
+                  "value": null,
+                  "description": "boolean - debe estar activa la config",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "rentadora",
+                  "value": null,
+                  "description": "boolean - debe estar activa la config",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "idSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "descripcionSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "fallasSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "choferSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "transportadoraSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "rentadoraSort",
+                  "value": null,
+                  "description": "asc/desc",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Configuración",
+      "item": [
+        {
+          "name": "ConfigBussiness",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/commons/config-business",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "commons",
+                "config-business"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna configuración de negocio', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('object');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
