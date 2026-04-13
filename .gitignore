@@ -1,5 +1,8 @@
-vendor/
-.env
-.phpunit.result.cache
+node_modules/
 reports/
+.env
 *.log
+
+# PHP (legacy)
+vendor/
+.phpunit.result.cache

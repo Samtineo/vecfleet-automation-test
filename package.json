@@ -1,0 +1,19 @@
+{
+    "name": "vecfleet-automation-test",
+    "version": "1.0.0",
+    "description": "Suite de tests automatizados para la API de VecFleet usando Newman",
+    "scripts": {
+        "install:browsers": "npx playwright install chromium",
+        "test": "npm run test:vec-dev",
+        "test:vec-dev": "newman run collections/vecfleet-api.postman_collection.json -e environments/vec-dev.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/vec-dev.html --reporter-htmlextra-title 'VecFleet API - Vec Dev'",
+        "test:vec-hotfix": "newman run collections/vecfleet-api.postman_collection.json -e environments/vec-hotfix.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/vec-hotfix.html --reporter-htmlextra-title 'VecFleet API - VEC Hotfix'",
+        "test:dinant": "newman run collections/vecfleet-api.postman_collection.json -e environments/dinant-test.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/dinant-test.html --reporter-htmlextra-title 'VecFleet API - Dinant Test'",
+        "test:teco": "newman run collections/vecfleet-api.postman_collection.json -e environments/teco-test.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/teco-test.html --reporter-htmlextra-title 'VecFleet API - Teco Test'",
+        "test:folder": "newman run collections/vecfleet-api.postman_collection.json -e environments/vec-dev.postman_environment.json --folder",
+        "test:bail": "newman run collections/vecfleet-api.postman_collection.json -e environments/vec-dev.postman_environment.json --bail --reporters cli,htmlextra --reporter-htmlextra-export reports/bail-run.html"
+    },
+    "devDependencies": {
+        "newman": "^6.2.1",
+        "newman-reporter-htmlextra": "^1.23.1"
+    }
+}

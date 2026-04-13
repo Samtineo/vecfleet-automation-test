@@ -1,79 +1,92 @@
 # vecfleet-automation-test
 
-Suite de tests automatizados para la API de VecFleet. Corre contra entornos desplegados vía HTTP — no requiere el código fuente de la aplicación.
+Suite de tests automatizados para la API de VecFleet usando **Newman** (CLI runner de Postman).
 
 ## Requisitos
 
-- PHP 8.2+
-- Composer
+- Node.js 18+
+- npm
 
 ## Setup
 
 ```bash
-# 1. Instalar dependencias
-composer install
+# Instalar Newman y el reporter HTML
+npm install
 
-# 2. Configurar entorno
-cp .env.example .env
-# Editar .env con la URL del entorno y las credenciales de prueba
+# Completar credenciales en el entorno que se quiere usar
+# Editar environments/vec-dev.postman_environment.json
+# Cargar username y password
 ```
-
-## Variables de entorno
-
-| Variable | Descripción | Ejemplo |
-|---|---|---|
-| `API_URL` | URL base del entorno | `https://vec-dev.vecfleet.io/ws/Public/index.php/api` |
-| `TEST_USERNAME` | Usuario de prueba | `qa_user` |
-| `TEST_PASSWORD` | Contraseña del usuario | `MiClave1$` |
-| `HTTP_TIMEOUT` | Timeout de requests (seg) | `30` |
 
 ## Ejecutar tests
 
 ```bash
-# Todos los tests
-composer test
+# Contra vec-dev (default)
+npm test
 
-# Por módulo
-composer test:auth
-composer test:tickets
-composer test:moviles
-composer test:combustibles
+# Contra un entorno específico
+npm run test:vec-dev
+npm run test:vec-hotfix
+npm run test:dinant
+npm run test:teco
 
-# Un test específico
-vendor/bin/phpunit --filter LoginTest --testdox
-```
+# Ejecutar una carpeta específica de la colección
+npm run test:folder -- "Auth"
+npm run test:folder -- "Tickets"
 
-## Estructura
-
-```
-tests/
-├── bootstrap.php              # Carga .env y autoload
-├── TestCase.php               # Clase base con cliente HTTP y helpers
-└── Integration/
-    ├── Auth/
-    │   └── LoginTest.php      # Login, token, endpoints protegidos
-    ├── Tickets/
-    │   └── TicketsTest.php    # CRUD tickets, grilla, búsqueda
-    ├── Moviles/
-    │   └── MovilesTest.php    # CRUD vehículos, grilla, select
-    └── Combustibles/
-        └── CombustiblesTest.php  # Combustibles, controles de carga
+# Detener en el primer fallo
+npm run test:bail
 ```
 
 ## Entornos disponibles
 
-Ver [Vec-collections](https://github.com/Samtineo/Vec-collections) para la lista completa de URLs por entorno.
+| Script | Entorno | URL |
+|---|---|---|
+| `test:vec-dev` | Vec Dev | `https://vec-dev.vecfleet.io/ws/Public/index.php/api` |
+| `test:vec-hotfix` | VEC Hotfix | `https://vec-hotfix.vecfleet.io/ws/Public/index.php/api` |
+| `test:dinant` | Vec Dinant-test | `https://test-dinant.vecfleet.io/ws/Public/index.php/api` |
+| `test:teco` | Vec teco-test | `https://testing-teco.vec.com.ar/ws/Public/index.php/api` |
 
-| Entorno | URL |
-|---|---|
-| Vec Dev | `https://vec-dev.vecfleet.io/ws/Public/index.php/api` |
-| Vec Hotfix | `https://vec-hotfix.vecfleet.io/ws/Public/index.php/api` |
-| Vec Dinant-test | `https://test-dinant.vecfleet.io/ws/Public/index.php/api` |
-| Vec teco-test | `https://testing-teco.vec.com.ar/ws/Public/index.php/api` |
+## Estructura
 
-## Convenciones
+```
+vecfleet-automation-test/
+├── collections/
+│   └── vecfleet-api.postman_collection.json   # Colección principal
+├── environments/
+│   ├── vec-dev.postman_environment.json
+│   ├── vec-hotfix.postman_environment.json
+│   ├── dinant-test.postman_environment.json
+│   └── teco-test.postman_environment.json
+├── reports/                                   # Generados al correr tests (ignorado por git)
+├── package.json
+└── README.md
+```
 
-- Todos los tests están en español (nombres de métodos y comentarios)
-- Cada módulo tiene su propia carpeta en `tests/Integration/`
-- Los tests no modifican datos de producción — usan entornos de test
-- Las credenciales nunca se commitean — siempre en `.env` (ignorado por git)
+## Reportes
+
+Cada ejecución genera un reporte HTML en `reports/`. Abrir en el navegador para ver resultados detallados con tiempos, asserts y errores.
+
+## Credenciales
+
+Las credenciales (`username`, `password`) se cargan en los archivos de entorno localmente.
+**Nunca commitear archivos de entorno con credenciales reales.**
+
+## Agregar tests a los requests
+
+Los test scripts se agregan directamente en Postman (pestaña **Tests** de cada request) y se guardan en la colección. Ejemplo:
+
+```javascript
+// Verificar status code
+pm.test("Status 200", () => pm.response.to.have.status(200));
+
+// Verificar estructura del body
+pm.test("Retorna token", () => {
+    const body = pm.response.json();
+    pm.expect(body.usuario.token).to.not.be.empty;
+});
+
+// Guardar token para requests siguientes
+const token = pm.response.json()?.usuario?.token;
+if (token) pm.environment.set("token", token);
+```
