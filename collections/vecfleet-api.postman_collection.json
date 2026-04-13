@@ -18,9 +18,19 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "var data = pm.response.json();",
-                  "console.log(pm.response.text());",
-                  "pm.environment.set(\"token\", data.usuario.token);"
+                  "pm.test('Status 200 - Login exitoso', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "pm.test('Retorna objeto usuario', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('usuario');",
+                  "});",
+                  "pm.test('Token no está vacío', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.usuario.token).to.not.be.empty;",
+                  "});",
+                  "// Guardar token para requests siguientes",
+                  "const token = pm.response.json()?.usuario?.token;",
+                  "if (token) pm.environment.set('token', token);"
                 ],
                 "type": "text/javascript",
                 "packages": {}
@@ -143,7 +153,20 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - Token válido', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/public/auth/get_token",
@@ -275,7 +298,25 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array de bases', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "    pm.expect(body.length).to.be.greaterThan(0);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         }
       ]
     },
@@ -304,7 +345,24 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna estructura de grilla de disponibilidad', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('object');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "disponibilidad/exportar-excel",
@@ -560,7 +618,20 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/sync",
@@ -861,7 +932,24 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna estructura de grilla', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('object');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "combustibles/grid Elis",
@@ -1836,7 +1924,20 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ]
             },
             {
               "name": "formulario",
@@ -7518,7 +7619,22 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 o 204', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/tickets/cerrar/{ticketId}",
@@ -7948,7 +8064,20 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/newGrid",
@@ -8201,7 +8330,31 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna tickets y paginación', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('tickets');",
+                  "    pm.expect(body).to.have.property('pagination');",
+                  "    pm.expect(body.pagination).to.have.property('page');",
+                  "    pm.expect(body.pagination).to.have.property('count');",
+                  "    pm.expect(body.pagination).to.have.property('perPage');",
+                  "});",
+                  "pm.test('Tickets es un array', () => {",
+                  "    pm.expect(pm.response.json().tickets).to.be.an('array');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/{ticket_id}/actions",
@@ -9954,7 +10107,24 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna configuración de negocio', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('object');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         }
       ]
     },
