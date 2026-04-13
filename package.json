@@ -8,7 +8,7 @@
         "test:vec-dev": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/vec-dev.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/vec-dev.html --reporter-htmlextra-title 'VecFleet Smoke - Vec Dev'",
         "test:vec-hotfix": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/vec-hotfix.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/vec-hotfix.html --reporter-htmlextra-title 'VecFleet Smoke - VEC Hotfix'",
         "test:dinant": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/dinant-test.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/dinant-test.html --reporter-htmlextra-title 'VecFleet Smoke - Dinant Test'",
-        "test:teco": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/teco-test.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/teco-test.html --reporter-htmlextra-title 'VecFleet Smoke - Teco Test'",
+        "test:teco": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/teco-test.postman_environment.json --timeout-request 15000 --reporters cli,htmlextra --reporter-htmlextra-export reports/teco-test.html --reporter-htmlextra-title 'VecFleet Smoke - Teco Test'",
         "test:all": "npm run test:vec-dev && npm run test:vec-hotfix && npm run test:dinant && npm run test:teco",
         "test:bail": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/vec-dev.postman_environment.json --bail --reporters cli,htmlextra --reporter-htmlextra-export reports/bail-run.html"
     },
