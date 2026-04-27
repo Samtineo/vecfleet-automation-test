@@ -2902,7 +2902,26 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna lista de gerenciadores', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('array');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/gerenciadores/tipo/{gerenciadorTipoId}/select",
@@ -4698,7 +4717,28 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de móviles', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "        pm.expect(body).to.have.property('data');",
+                  "        pm.expect(body.data).to.be.an('array');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "vehicles/{active}",
@@ -6377,7 +6417,26 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de personas', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         },
         {
           "name": "/personas/{personaId}",
@@ -6602,7 +6661,26 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de preventivos', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         }
       ]
     },
@@ -7221,7 +7299,26 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de talleres', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
         }
       ]
     },

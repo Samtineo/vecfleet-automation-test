@@ -1303,6 +1303,334 @@
           ]
         }
       ]
+    },
+    {
+      "name": "08 - Móviles",
+      "item": [
+        {
+          "name": "/newGrid",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{url}}/moviles/newGrid?page=0&perPage=20",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "moviles",
+                "newGrid"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de móviles', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "        pm.expect(body).to.have.property('data');",
+                  "        pm.expect(body.data).to.be.an('array');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - Preventivos",
+      "item": [
+        {
+          "name": "/grid",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true,
+            "disabledSystemHeaders": {
+              "accept-encoding": true,
+              "connection": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/preventivos/grid?start=0&length=10",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "preventivos",
+                "grid"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "0"
+                },
+                {
+                  "key": "length",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de preventivos', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Personas",
+      "item": [
+        {
+          "name": "/personas/grid",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true,
+            "disabledSystemHeaders": {
+              "accept-encoding": true,
+              "connection": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/personas/grid?start=0&length=15",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "personas",
+                "grid"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "0"
+                },
+                {
+                  "key": "length",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de personas', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 - Gerenciadores",
+      "item": [
+        {
+          "name": "/gerenciadores/select",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/gerenciadores/select",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "gerenciadores",
+                "select"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna lista de gerenciadores', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('array');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12 - Talleres",
+      "item": [
+        {
+          "name": "/talleres/grid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/talleres/grid",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "talleres",
+                "grid"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna grilla de talleres', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.be.an('object');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

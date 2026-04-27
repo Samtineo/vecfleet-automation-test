@@ -133,6 +133,67 @@ const TEST_SCRIPTS = {
         "    pm.expect(body).to.be.an('object');",
         "});",
         "pm.test('Tiempo de respuesta < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+    ],
+
+    // -------------------------------------------------------------------------
+    // Fase 2: Móviles, Preventivos, Personas, Gerenciadores, Talleres
+    // -------------------------------------------------------------------------
+
+    'Moviles > /newGrid': [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "if (pm.response.code === 200) {",
+        "    pm.test('Retorna grilla de móviles', () => {",
+        "        const body = pm.response.json();",
+        "        pm.expect(body).to.be.an('object');",
+        "        pm.expect(body).to.have.property('data');",
+        "        pm.expect(body.data).to.be.an('array');",
+        "    });",
+        "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+        "}"
+    ],
+
+    'Preventivos > /grid': [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "if (pm.response.code === 200) {",
+        "    pm.test('Retorna grilla de preventivos', () => {",
+        "        const body = pm.response.json();",
+        "        pm.expect(body).to.be.an('object');",
+        "    });",
+        "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+        "}"
+    ],
+
+    'Personas > /personas/grid': [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "if (pm.response.code === 200) {",
+        "    pm.test('Retorna grilla de personas', () => {",
+        "        const body = pm.response.json();",
+        "        pm.expect(body).to.be.an('object');",
+        "    });",
+        "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+        "}"
+    ],
+
+    'Gerenciadores > /gerenciadores/select': [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "if (pm.response.code === 200) {",
+        "    pm.test('Retorna lista de gerenciadores', () => {",
+        "        const body = pm.response.json();",
+        "        pm.expect(body).to.be.an('array');",
+        "    });",
+        "    pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+        "}"
+    ],
+
+    'Talleres > /talleres/grid': [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "if (pm.response.code === 200) {",
+        "    pm.test('Retorna grilla de talleres', () => {",
+        "        const body = pm.response.json();",
+        "        pm.expect(body).to.be.an('object');",
+        "    });",
+        "    pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+        "}"
     ]
 };
 
