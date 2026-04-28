@@ -10,9 +10,14 @@
         "test:dinant": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/dinant-test.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/dinant-test.html --reporter-htmlextra-title 'VecFleet Smoke - Dinant Test'",
         "test:teco": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/teco-test.postman_environment.json --timeout-request 15000 --reporters cli,htmlextra --reporter-htmlextra-export reports/teco-test.html --reporter-htmlextra-title 'VecFleet Smoke - Teco Test'",
         "test:all": "npm run test:vec-dev && npm run test:vec-hotfix && npm run test:dinant && npm run test:teco",
-        "test:bail": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/vec-dev.postman_environment.json --bail --reporters cli,htmlextra --reporter-htmlextra-export reports/bail-run.html"
+        "test:bail": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/vec-dev.postman_environment.json --bail --reporters cli,htmlextra --reporter-htmlextra-export reports/bail-run.html",
+        "test:ui": "npx playwright test",
+        "test:ui:vec-2977": "npx playwright test tests/VEC-2977-ver-controles/",
+        "test:ui:headed": "npx playwright test --headed",
+        "test:ui:report": "npx playwright show-report reports/playwright"
     },
     "devDependencies": {
+        "@playwright/test": "^1.59.1",
         "newman": "^6.2.1",
         "newman-reporter-htmlextra": "^1.23.1",
         "xlsx": "^0.18.5"
