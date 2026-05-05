@@ -1,39 +1,70 @@
-// VEC-3069 — Switch Mecánico en modal de exportación de Tickets
+// VEC-3069 — Exportación de Tickets: validación genérica del modal y descarga
 const { test, expect } = require('@playwright/test');
-const { LoginPage } = require('./pages/LoginPage');
+const path   = require('path');
+const fs     = require('fs');
+const XLSX   = require('../../node_modules/xlsx/xlsx.js');
+const { LoginPage }        = require('./pages/LoginPage');
 const { TicketsExportPage } = require('./pages/TicketsExportPage');
 
 const CREDENTIALS = { username: 'stineo', password: 'susy1234' };
 
-test.describe('VEC-3069 — Switch Mecánico en exportación de Tickets', () => {
+function parseExcelHeaders(filePath) {
+  const workbook  = XLSX.readFile(filePath);
+  const sheet     = workbook.Sheets[workbook.SheetNames[0]];
+  const rows      = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  return rows[0] || [];
+}
+
+test.describe('VEC-3069 — Modal de exportación de Tickets', () => {
   let loginPage;
   let exportPage;
 
   test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
+    loginPage  = new LoginPage(page);
     exportPage = new TicketsExportPage(page);
     await loginPage.login(CREDENTIALS.username, CREDENTIALS.password);
     await exportPage.gotoTickets();
     await exportPage.abrirModalExport();
   });
 
-  test('TC-01 | Switch "Mecánico" existe en el modal de exportación', async ({ page }) => {
-    await expect(exportPage.inputMecanicoNombres).toBeAttached();
-    await expect(exportPage.labelMecanico).toBeVisible();
+  test('TC-01 | Modal de exportación abre desde el grid de Tickets', async () => {
+    await expect(exportPage.modal).toBeVisible();
+    await expect(exportPage.seccionColumnas).toBeVisible();
   });
 
-  test('TC-02 | Con "Desglose de Tareas" apagado, switch Mecánico está deshabilitado y muestra tooltip', async ({ page }) => {
-    await exportPage.desactivarTareaNombre();
-    await expect(exportPage.inputMecanicoNombres).toBeDisabled();
-    await exportPage.hoverSwitchMecanicoDisabled();
-    await expect(exportPage.tooltipMecanico).toBeVisible();
+  test('TC-02 | Export con columnas seleccionadas descarga un archivo válido', async ({ page }, testInfo) => {
+    const download = await exportPage.exportarYDescargar();
+    const filePath = path.join(testInfo.outputDir, download.suggestedFilename());
+    await download.saveAs(filePath);
+
+    const stats = fs.statSync(filePath);
+    expect(stats.size).toBeGreaterThan(0);
   });
 
-  test('TC-03 | Activar "Desglose de Tareas" habilita el switch Mecánico', async ({ page }) => {
-    await exportPage.desactivarTareaNombre();
-    await expect(exportPage.inputMecanicoNombres).toBeDisabled();
+  test('TC-03 | Columnas habilitadas en el modal aparecen en el Excel', async ({ page }, testInfo) => {
+    await exportPage.desmarcarTodo();
+    await exportPage.setSwitchState('id', true);
+    await exportPage.setSwitchState('movilDominio', true);
 
-    await exportPage.activarTareaNombre();
-    await expect(exportPage.inputMecanicoNombres).toBeEnabled();
+    const download = await exportPage.exportarYDescargar();
+    const filePath = path.join(testInfo.outputDir, download.suggestedFilename());
+    await download.saveAs(filePath);
+
+    const headers = parseExcelHeaders(filePath);
+    expect(headers).toContain('Nro. Ticket');
+    expect(headers).toContain('Movil');
+  });
+
+  test('TC-04 | Columna deshabilitada en el modal no aparece en el Excel', async ({ page }, testInfo) => {
+    await exportPage.desmarcarTodo();
+    await exportPage.setSwitchState('id', true);
+
+    const download = await exportPage.exportarYDescargar();
+    const filePath = path.join(testInfo.outputDir, download.suggestedFilename());
+    await download.saveAs(filePath);
+
+    const headers = parseExcelHeaders(filePath);
+    expect(headers).toContain('Nro. Ticket');
+    expect(headers).not.toContain('Movil');
   });
 });

@@ -13,6 +13,7 @@
         "test:bail": "newman run collections/vecfleet-smoke.postman_collection.json -e environments/vec-dev.postman_environment.json --bail --reporters cli,htmlextra --reporter-htmlextra-export reports/bail-run.html",
         "test:ui": "npx playwright test",
         "test:ui:vec-2977": "npx playwright test tests/VEC-2977-ver-controles/",
+        "test:ui:vec-3069": "npx playwright test tests/VEC-3069-mecanico-export/",
         "test:ui:headed": "npx playwright test --headed",
         "test:ui:report": "npx playwright show-report reports/playwright"
     },

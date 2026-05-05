@@ -1,16 +1,24 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
+const DOCS_FILE = path.join(__dirname, '../docs/cancelacion-tickets-inactivacion.md');
 const HOST = 'personal-test.vecfleet.io';
 const BASE_PATH = '/ws/Public/index.php/api';
 const ENTORNO = 'personal-test';
 
 const MOTIVO_CANCELACION = 'Cancelación automática por inactivación de vehículo';
 
-// Hardcodear IDs si se conocen; el script los busca automáticamente si quedan en null
-let MOVIL_CON_PREVENTIVO_ID = null;
-let MOVIL_CON_VENCIMIENTO_ID = null;
-let MOVIL_SIN_TICKETS_ID = null;
+// Test data — personal-test.vecfleet.io
+// Movil 23109 (IKA224): tickets PREVENTIVO 488601 + VENCIMIENTO 488602 creados 2026-05-04
+// Movil 23110 (PBK646): ticket VENCIMIENTO 488603 creado 2026-05-04 (usado en TC-04)
+// Movil 23111 (IJE331): sin tickets activos (usado en TC-07)
+const MOVIL_PREVENTIVO_ID  = 23109;
+const TICKET_PREVENTIVO_ID = 488601;
+const MOVIL_VENCIMIENTO_ID = 23110;
+const TICKET_VENCIMIENTO_ID = 488603;
+const MOVIL_SIN_TICKETS_ID = 23111;
 
 function request(method, path, body, token) {
   return new Promise((resolve, reject) => {
@@ -40,32 +48,12 @@ function fail(tc, msg) { results[tc] = 'FAIL'; console.log('[FAIL] ' + msg); }
 function skip(tc, msg) { results[tc] = 'SKIP'; console.log('[SKIP] ' + msg); }
 function info(msg)     { console.log('       ' + msg); }
 
-async function findMovilConTicketAbierto(tipo, token) {
-  const res = await request('GET',
-    '/tickets/newGrid?page=0&perPage=20&estado=ABIERTO&ticketTipo=' + tipo, null, token);
-  if (res.status !== 200 || !res.body.tickets) return null;
-  for (const t of res.body.tickets) {
-    const movilId = t.movil;
-    if (!movilId) continue;
-    const m = await request('GET', '/moviles/' + movilId, null, token);
-    if (m.body && (m.body.activo === true || m.body.activo === 1)) {
-      return { movilId, ticketId: t.id };
-    }
-  }
-  return null;
+async function inactivarMovil(movilId, estadoActual, token) {
+  return request('PUT', '/moviles/' + movilId + '/estado', { estado: estadoActual, activo: false }, token);
 }
 
-async function findMovilSinTickets(token) {
-  const res = await request('GET', '/moviles/list?activo=1&limit=30&page=1', null, token);
-  const moviles = res.body && res.body.moviles ? res.body.moviles : [];
-  for (const m of moviles) {
-    const tRes = await request('GET',
-      '/tickets/newGrid?page=0&perPage=5&movil=' + m.id + '&estado=ABIERTO', null, token);
-    if (tRes.status === 200 && tRes.body.pagination && tRes.body.pagination.count === 0) {
-      return m.id;
-    }
-  }
-  return null;
+async function reactivarMovil(movilId, estadoActual, token) {
+  return request('PUT', '/moviles/' + movilId + '/estado', { estado: estadoActual, activo: true }, token);
 }
 
 async function main() {
@@ -91,223 +79,158 @@ async function main() {
   if (flagValue === 'true' || flagValue === true) {
     pass('tc01', 'TC-01: Config flag habilitado');
   } else {
-    fail('tc01', 'TC-01: Flag deshabilitado o no encontrado (valor=' + flagValue + ')' +
-      (flagValue === null ? ' — clave ausente en config-business, requiere habilitación en DevOps' : ''));
+    fail('tc01', 'TC-01: Flag deshabilitado o no encontrado (valor=' + flagValue + ')');
   }
 
   // -------------------------------------------------------
   // TC-02: Motivo "Cancelación automática por inactivación de vehículo" existe
   // -------------------------------------------------------
   console.log('\n--- TC-02: Motivo de cancelación existe en el sistema ---');
-  const motivosRes = await request('GET', '/motivos?tipoMotivo=CANCELACION', null, token);
-  // Formato: { motivos: [...] } o array directo
-  const motivosArr = motivosRes.body && motivosRes.body.motivos
-    ? motivosRes.body.motivos
-    : (Array.isArray(motivosRes.body) ? motivosRes.body : []);
+  const motivosRes = await request('GET',
+    '/motivos/simple-search?nombre=' + encodeURIComponent('Cancelaci'), null, token);
+  const motivosArr = Array.isArray(motivosRes.body) ? motivosRes.body : [];
   const motivoEncontrado = motivosArr.find(m => m.nombre === MOTIVO_CANCELACION);
-  info('Motivos de cancelacion encontrados: ' + motivosArr.length);
+  info('Motivos que coinciden con "Cancelaci": ' + motivosArr.length);
   if (motivoEncontrado) {
     pass('tc02', 'TC-02: Motivo existe (id=' + motivoEncontrado.id + ')');
   } else {
-    fail('tc02', 'TC-02: Motivo "' + MOTIVO_CANCELACION + '" no encontrado — migración 20260409 no ejecutada en este entorno');
+    fail('tc02', 'TC-02: Motivo "' + MOTIVO_CANCELACION + '" no encontrado — migración 20260409 no ejecutada');
   }
 
-  // Si TC-01 o TC-02 fallan, los TCs funcionales no pueden pasar
   if (results.tc01 !== 'PASS' || results.tc02 !== 'PASS') {
     console.log('\n[BLOQUEADO] TC-03 a TC-08 requieren TC-01 y TC-02 en PASS.');
-    console.log('Pendiente: habilitar flag + ejecutar migraciones en ' + ENTORNO);
     ['tc03','tc04','tc05','tc06','tc07','tc08'].forEach(tc => { results[tc] = 'SKIP'; });
   } else {
-    // -------------------------------------------------------
-    // SETUP: Buscar moviles de prueba si no están hardcodeados
-    // -------------------------------------------------------
-    console.log('\n--- SETUP: Buscando móviles de prueba ---');
-    let preventivoMovilId = MOVIL_CON_PREVENTIVO_ID;
-    let preventivoTicketId = null;
-    if (!preventivoMovilId) {
-      const found = await findMovilConTicketAbierto('PREVENTIVO', token);
-      if (found) { preventivoMovilId = found.movilId; preventivoTicketId = found.ticketId; }
-    }
-    info('Movil con PREVENTIVO abierto: ' + (preventivoMovilId || 'NO ENCONTRADO'));
-
-    let vencimientoMovilId = MOVIL_CON_VENCIMIENTO_ID;
-    let vencimientoTicketId = null;
-    if (!vencimientoMovilId) {
-      const found = await findMovilConTicketAbierto('VENCIMIENTO', token);
-      if (found) { vencimientoMovilId = found.movilId; vencimientoTicketId = found.ticketId; }
-    }
-    info('Movil con VENCIMIENTO abierto: ' + (vencimientoMovilId || 'NO ENCONTRADO'));
-
-    let sinTicketsMovilId = MOVIL_SIN_TICKETS_ID;
-    if (!sinTicketsMovilId) sinTicketsMovilId = await findMovilSinTickets(token);
-    info('Movil sin tickets activos: ' + (sinTicketsMovilId || 'NO ENCONTRADO'));
 
     // -------------------------------------------------------
     // TC-03: Inactivar movil con PREVENTIVO abierto → ticket CANCELADO
     // -------------------------------------------------------
-    console.log('\n--- TC-03: Inactivar movil con PREVENTIVO abierto ---');
-    if (!preventivoMovilId) {
-      skip('tc03', 'TC-03: No se encontró movil activo con PREVENTIVO abierto — crear ticket PREVENTIVO de prueba');
+    console.log('\n--- TC-03: Inactivar movil ' + MOVIL_PREVENTIVO_ID + ' con PREVENTIVO ' + TICKET_PREVENTIVO_ID + ' abierto ---');
+    const m3Before = await request('GET', '/moviles/' + MOVIL_PREVENTIVO_ID, null, token);
+    const estado3 = m3Before.body.estado;
+    const tPrevBefore = await request('GET', '/tickets/' + TICKET_PREVENTIVO_ID, null, token);
+    info('Ticket ' + TICKET_PREVENTIVO_ID + ' estado antes: ' + tPrevBefore.body.estado);
+
+    if (tPrevBefore.body.estado !== 'ABIERTO') {
+      skip('tc03', 'TC-03: Ticket ' + TICKET_PREVENTIVO_ID + ' no está ABIERTO (estado=' + tPrevBefore.body.estado + ') — datos de prueba consumidos, recrear');
     } else {
-      const movilBefore = await request('GET', '/moviles/' + preventivoMovilId, null, token);
-      const estadoBefore = movilBefore.body.estado;
-      const tBeforeRes = await request('GET',
-        '/tickets/newGrid?page=0&perPage=50&movil=' + preventivoMovilId + '&estado=ABIERTO', null, token);
-      const tBefore = tBeforeRes.body.tickets || [];
-      info('Movil ' + preventivoMovilId + ' | estado=' + estadoBefore + ' | tickets activos: ' + tBefore.length);
+      const inact3 = await inactivarMovil(MOVIL_PREVENTIVO_ID, estado3, token);
+      info('PUT /moviles/' + MOVIL_PREVENTIVO_ID + '/estado activo=false -> status=' + inact3.status);
 
-      const inactRes = await request('PUT', '/moviles/' + preventivoMovilId + '/estado',
-        { estado: estadoBefore, activo: false }, token);
-      info('PUT /moviles/' + preventivoMovilId + '/estado activo=false -> status=' + inactRes.status);
-
-      if (inactRes.status !== 200 && inactRes.status !== 204) {
-        fail('tc03', 'TC-03: Error al inactivar movil -> status=' + inactRes.status);
+      if (inact3.status !== 200 && inact3.status !== 204) {
+        fail('tc03', 'TC-03: Error al inactivar movil -> status=' + inact3.status + ' | ' + JSON.stringify(inact3.body).substring(0, 200));
       } else {
         await new Promise(r => setTimeout(r, 500));
-        const tAfterRes = await request('GET',
-          '/tickets/newGrid?page=0&perPage=50&movil=' + preventivoMovilId, null, token);
-        const tAfterAll = tAfterRes.body.tickets || [];
-        const cancelados = tAfterAll.filter(t => t.estado === 'CANCELADO');
-        const abiertos = tAfterAll.filter(t => !['CANCELADO','CERRADO'].includes(t.estado));
-        info('Tickets cancelados: ' + cancelados.length + ' | abiertos restantes: ' + abiertos.length);
-        preventivoTicketId = preventivoTicketId || (cancelados[0] && cancelados[0].id);
+        const tPrevAfter = await request('GET', '/tickets/' + TICKET_PREVENTIVO_ID, null, token);
+        info('Ticket ' + TICKET_PREVENTIVO_ID + ' estado después: ' + tPrevAfter.body.estado);
 
-        if (tBefore.length > 0 && abiertos.length === 0) {
-          pass('tc03', 'TC-03: Todos los tickets activos fueron cancelados (' + cancelados.length + ')');
-        } else if (tBefore.length === 0) {
-          skip('tc03', 'TC-03: Movil no tenía tickets activos al momento de la inactivacion');
+        if (tPrevAfter.body.estado === 'CANCELADO') {
+          pass('tc03', 'TC-03: Ticket PREVENTIVO ' + TICKET_PREVENTIVO_ID + ' cancelado al inactivar movil ' + MOVIL_PREVENTIVO_ID);
         } else {
-          fail('tc03', 'TC-03: Tickets abiertos persisten tras inactivar — antes=' + tBefore.length + ' abiertos=' + abiertos.length);
+          fail('tc03', 'TC-03: Ticket PREVENTIVO sigue en estado ' + tPrevAfter.body.estado + ' (esperado CANCELADO)');
         }
       }
 
-      const restoreRes = await request('PUT', '/moviles/' + preventivoMovilId + '/estado',
-        { estado: estadoBefore, activo: true }, token);
-      info('Restaurando movil ' + preventivoMovilId + ' -> activo=true | status=' + restoreRes.status);
+      const react3 = await reactivarMovil(MOVIL_PREVENTIVO_ID, estado3, token);
+      info('Restaurando movil ' + MOVIL_PREVENTIVO_ID + ' activo=true -> status=' + react3.status);
     }
 
     // -------------------------------------------------------
     // TC-04: Inactivar movil con VENCIMIENTO abierto → ticket CANCELADO
     // -------------------------------------------------------
-    console.log('\n--- TC-04: Inactivar movil con VENCIMIENTO abierto ---');
-    if (!vencimientoMovilId || vencimientoMovilId === preventivoMovilId) {
-      skip('tc04', 'TC-04: No se encontró movil distinto con VENCIMIENTO abierto');
+    console.log('\n--- TC-04: Inactivar movil ' + MOVIL_VENCIMIENTO_ID + ' con VENCIMIENTO ' + TICKET_VENCIMIENTO_ID + ' abierto ---');
+    const m4Before = await request('GET', '/moviles/' + MOVIL_VENCIMIENTO_ID, null, token);
+    const estado4 = m4Before.body.estado;
+    const tVencBefore = await request('GET', '/tickets/' + TICKET_VENCIMIENTO_ID, null, token);
+    info('Ticket ' + TICKET_VENCIMIENTO_ID + ' estado antes: ' + tVencBefore.body.estado);
+
+    if (tVencBefore.body.estado !== 'ABIERTO') {
+      skip('tc04', 'TC-04: Ticket ' + TICKET_VENCIMIENTO_ID + ' no está ABIERTO (estado=' + tVencBefore.body.estado + ') — datos de prueba consumidos, recrear');
     } else {
-      const movilBefore = await request('GET', '/moviles/' + vencimientoMovilId, null, token);
-      const estadoBefore = movilBefore.body.estado;
-      const tBeforeRes = await request('GET',
-        '/tickets/newGrid?page=0&perPage=50&movil=' + vencimientoMovilId + '&estado=ABIERTO', null, token);
-      const tBefore = tBeforeRes.body.tickets || [];
-      info('Movil ' + vencimientoMovilId + ' | tickets activos: ' + tBefore.length);
+      const inact4 = await inactivarMovil(MOVIL_VENCIMIENTO_ID, estado4, token);
+      info('PUT /moviles/' + MOVIL_VENCIMIENTO_ID + '/estado activo=false -> status=' + inact4.status);
 
-      const inactRes = await request('PUT', '/moviles/' + vencimientoMovilId + '/estado',
-        { estado: estadoBefore, activo: false }, token);
-      info('PUT /moviles/' + vencimientoMovilId + '/estado activo=false -> status=' + inactRes.status);
-
-      if (inactRes.status !== 200 && inactRes.status !== 204) {
-        fail('tc04', 'TC-04: Error al inactivar movil -> status=' + inactRes.status);
+      if (inact4.status !== 200 && inact4.status !== 204) {
+        fail('tc04', 'TC-04: Error al inactivar movil -> status=' + inact4.status + ' | ' + JSON.stringify(inact4.body).substring(0, 200));
       } else {
         await new Promise(r => setTimeout(r, 500));
-        const tAfterRes = await request('GET',
-          '/tickets/newGrid?page=0&perPage=50&movil=' + vencimientoMovilId, null, token);
-        const tAfterAll = tAfterRes.body.tickets || [];
-        const abiertos = tAfterAll.filter(t => !['CANCELADO','CERRADO'].includes(t.estado));
-        const cancelados = tAfterAll.filter(t => t.estado === 'CANCELADO');
-        vencimientoTicketId = vencimientoTicketId || (cancelados[0] && cancelados[0].id);
-        info('Cancelados: ' + cancelados.length + ' | abiertos restantes: ' + abiertos.length);
+        const tVencAfter = await request('GET', '/tickets/' + TICKET_VENCIMIENTO_ID, null, token);
+        info('Ticket ' + TICKET_VENCIMIENTO_ID + ' estado después: ' + tVencAfter.body.estado);
 
-        if (tBefore.length > 0 && abiertos.length === 0) {
-          pass('tc04', 'TC-04: Tickets VENCIMIENTO cancelados correctamente');
-        } else if (tBefore.length === 0) {
-          skip('tc04', 'TC-04: Movil no tenía tickets activos');
+        if (tVencAfter.body.estado === 'CANCELADO') {
+          pass('tc04', 'TC-04: Ticket VENCIMIENTO ' + TICKET_VENCIMIENTO_ID + ' cancelado al inactivar movil ' + MOVIL_VENCIMIENTO_ID);
         } else {
-          fail('tc04', 'TC-04: Tickets abiertos persisten tras inactivar — antes=' + tBefore.length + ' abiertos=' + abiertos.length);
+          fail('tc04', 'TC-04: Ticket VENCIMIENTO sigue en estado ' + tVencAfter.body.estado + ' (esperado CANCELADO)');
         }
       }
 
-      const restoreRes = await request('PUT', '/moviles/' + vencimientoMovilId + '/estado',
-        { estado: estadoBefore, activo: true }, token);
-      info('Restaurando movil ' + vencimientoMovilId + ' -> activo=true | status=' + restoreRes.status);
+      const react4 = await reactivarMovil(MOVIL_VENCIMIENTO_ID, estado4, token);
+      info('Restaurando movil ' + MOVIL_VENCIMIENTO_ID + ' activo=true -> status=' + react4.status);
     }
 
     // -------------------------------------------------------
     // TC-05: Comentario automático en ticket cancelado
     // -------------------------------------------------------
     console.log('\n--- TC-05: Comentario automático en ticket cancelado ---');
-    const ticketParaComentario = preventivoTicketId || vencimientoTicketId;
-    if (!ticketParaComentario) {
-      skip('tc05', 'TC-05: No hay ticket cancelado de referencia (TC-03/04 deben pasar primero)');
+    const refTicketId = TICKET_PREVENTIVO_ID;
+    const comRes = await request('GET',
+      '/ticket-comentarios/ticket/' + refTicketId + '/grid', null, token);
+    const comentarios = Array.isArray(comRes.body) ? comRes.body : (comRes.body.data || []);
+    const comentarioAuto = comentarios.find(c => (c.comentario || '').includes(MOTIVO_CANCELACION));
+    info('Comentarios en ticket ' + refTicketId + ': ' + comentarios.length);
+    if (comentarioAuto) {
+      pass('tc05', 'TC-05: Comentario automático presente en ticket ' + refTicketId);
+    } else if (results.tc03 !== 'PASS') {
+      skip('tc05', 'TC-05: TC-03 no pasó — ticket puede no estar cancelado');
     } else {
-      const comRes = await request('GET',
-        '/ticket-comentarios/ticket/' + ticketParaComentario + '/grid', null, token);
-      const comentarios = Array.isArray(comRes.body) ? comRes.body : (comRes.body.data || []);
-      const comentarioAuto = comentarios.find(c => (c.comentario || '').includes(MOTIVO_CANCELACION));
-      info('Comentarios en ticket ' + ticketParaComentario + ': ' + comentarios.length);
-      if (comentarioAuto) {
-        pass('tc05', 'TC-05: Comentario automático presente en ticket ' + ticketParaComentario);
-      } else {
-        fail('tc05', 'TC-05: Comentario "' + MOTIVO_CANCELACION + '" no encontrado');
-      }
+      fail('tc05', 'TC-05: Comentario "' + MOTIVO_CANCELACION + '" no encontrado en ticket ' + refTicketId);
     }
 
     // -------------------------------------------------------
     // TC-06: Motivo de cancelación asignado al ticket
     // -------------------------------------------------------
     console.log('\n--- TC-06: Motivo de cancelación asignado al ticket ---');
-    if (!ticketParaComentario) {
-      skip('tc06', 'TC-06: No hay ticket cancelado de referencia');
+    const tRes = await request('GET', '/tickets/' + refTicketId, null, token);
+    const motivoCancelacion = tRes.body.motivoCancelacion || tRes.body.motivo_cancelacion;
+    const motivoNombre = typeof motivoCancelacion === 'object'
+      ? (motivoCancelacion && motivoCancelacion.nombre)
+      : motivoCancelacion;
+    info('Ticket ' + refTicketId + ' motivoCancelacion=' + JSON.stringify(motivoCancelacion));
+    if (motivoCancelacion) {
+      pass('tc06', 'TC-06: Motivo de cancelación asignado (id/nombre=' + (motivoNombre || motivoCancelacion) + ')');
+    } else if (results.tc03 !== 'PASS') {
+      skip('tc06', 'TC-06: TC-03 no pasó — no hay ticket cancelado de referencia');
     } else {
-      const tRes = await request('GET', '/tickets/' + ticketParaComentario, null, token);
-      const motivoCancelacion = tRes.body.motivoCancelacion || tRes.body.motivo_cancelacion;
-      const motivoNombre = typeof motivoCancelacion === 'object'
-        ? (motivoCancelacion && motivoCancelacion.nombre)
-        : motivoCancelacion;
-      info('Ticket ' + ticketParaComentario + ' motivoCancelacion=' + JSON.stringify(motivoCancelacion));
-      if (motivoCancelacion) {
-        pass('tc06', 'TC-06: Motivo de cancelación asignado (id/nombre=' + (motivoNombre || motivoCancelacion) + ')');
-      } else {
-        fail('tc06', 'TC-06: Motivo de cancelación NO asignado al ticket');
-      }
+      fail('tc06', 'TC-06: Motivo de cancelación NO asignado al ticket ' + refTicketId);
     }
 
     // -------------------------------------------------------
     // TC-07: Inactivar movil SIN tickets activos → sin error
     // -------------------------------------------------------
-    console.log('\n--- TC-07: Inactivar movil sin tickets activos ---');
-    if (!sinTicketsMovilId) {
-      skip('tc07', 'TC-07: No se encontró movil activo sin tickets');
+    console.log('\n--- TC-07: Inactivar movil ' + MOVIL_SIN_TICKETS_ID + ' sin tickets activos ---');
+    const m7Before = await request('GET', '/moviles/' + MOVIL_SIN_TICKETS_ID, null, token);
+    const estado7 = m7Before.body.estado;
+    const inact7 = await inactivarMovil(MOVIL_SIN_TICKETS_ID, estado7, token);
+    info('PUT /moviles/' + MOVIL_SIN_TICKETS_ID + '/estado activo=false -> status=' + inact7.status);
+    if (inact7.status === 200 || inact7.status === 204) {
+      pass('tc07', 'TC-07: Inactivación sin tickets activos OK (status=' + inact7.status + ')');
     } else {
-      const movilBefore = await request('GET', '/moviles/' + sinTicketsMovilId, null, token);
-      const estadoBefore = movilBefore.body.estado;
-      const inactRes = await request('PUT', '/moviles/' + sinTicketsMovilId + '/estado',
-        { estado: estadoBefore, activo: false }, token);
-      info('PUT /moviles/' + sinTicketsMovilId + '/estado activo=false -> status=' + inactRes.status);
-      if (inactRes.status === 200 || inactRes.status === 204) {
-        pass('tc07', 'TC-07: Inactivacion sin tickets activos OK (status=' + inactRes.status + ')');
-      } else {
-        fail('tc07', 'TC-07: Error al inactivar movil sin tickets -> status=' + inactRes.status + ' | ' + JSON.stringify(inactRes.body).substring(0, 200));
-      }
-      const restoreRes = await request('PUT', '/moviles/' + sinTicketsMovilId + '/estado',
-        { estado: estadoBefore, activo: true }, token);
-      info('Restaurando movil ' + sinTicketsMovilId + ' -> activo=true | status=' + restoreRes.status);
+      fail('tc07', 'TC-07: Error al inactivar movil sin tickets -> status=' + inact7.status + ' | ' + JSON.stringify(inact7.body).substring(0, 200));
     }
+    const react7 = await reactivarMovil(MOVIL_SIN_TICKETS_ID, estado7, token);
+    info('Restaurando movil ' + MOVIL_SIN_TICKETS_ID + ' activo=true -> status=' + react7.status);
 
     // -------------------------------------------------------
     // TC-08: Reactivar movil → activo=true correcto
     // -------------------------------------------------------
-    console.log('\n--- TC-08: Reactivar movil vuelve a activo=true ---');
-    const movilParaReact = preventivoMovilId || vencimientoMovilId || sinTicketsMovilId;
-    if (!movilParaReact) {
-      skip('tc08', 'TC-08: No hay movil de referencia');
+    console.log('\n--- TC-08: Movil reactivado tiene activo=true ---');
+    const movilFinal = await request('GET', '/moviles/' + MOVIL_PREVENTIVO_ID, null, token);
+    const activoFinal = movilFinal.body.activo;
+    info('Movil ' + MOVIL_PREVENTIVO_ID + ' activo=' + activoFinal + ' (esperado: true/1)');
+    if (activoFinal === true || activoFinal === 1 || activoFinal === '1') {
+      pass('tc08', 'TC-08: Movil reactivado correctamente (activo=' + activoFinal + ')');
     } else {
-      const movilDespues = await request('GET', '/moviles/' + movilParaReact, null, token);
-      const activo = movilDespues.body.activo;
-      info('Movil ' + movilParaReact + ' activo=' + activo + ' (esperado: true/1)');
-      if (activo === true || activo === 1 || activo === '1') {
-        pass('tc08', 'TC-08: Movil reactivado correctamente (activo=' + activo + ')');
-      } else {
-        fail('tc08', 'TC-08: Movil NO fue reactivado (activo=' + activo + ')');
-      }
+      fail('tc08', 'TC-08: Movil NO fue reactivado (activo=' + activoFinal + ')');
     }
   }
 
@@ -316,15 +239,27 @@ async function main() {
   console.log('Entorno: ' + ENTORNO);
   const tcKeys = ['tc01','tc02','tc03','tc04','tc05','tc06','tc07','tc08'];
   console.log('Resultados: ' + tcKeys.map(k => k.toUpperCase() + '=' + (results[k]||'SKIP')).join(' | '));
-  const fails = tcKeys.filter(k => results[k] === 'FAIL').length;
+  const fails  = tcKeys.filter(k => results[k] === 'FAIL').length;
   const passes = tcKeys.filter(k => results[k] === 'PASS').length;
-  const skips = tcKeys.filter(k => !results[k] || results[k] === 'SKIP').length;
+  const skips  = tcKeys.filter(k => !results[k] || results[k] === 'SKIP').length;
   console.log('PASS=' + passes + ' FAIL=' + fails + ' SKIP=' + skips);
 
-  if (results.tc01 === 'FAIL' || results.tc02 === 'FAIL') {
-    console.log('\n[PENDIENTE DEVOPS]');
-    if (results.tc01 === 'FAIL') console.log('  - Habilitar config: moviles.cancelacionTicketsAlInactivar.habilitado = true');
-    if (results.tc02 === 'FAIL') console.log('  - Ejecutar migración: 20260409000001_add_motivo_cancelacion_inactivacion_vehiculo');
+  appendRunToDoc(results);
+}
+
+function appendRunToDoc(results) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const row = `| ${today} | ${ENTORNO} | ${['tc01','tc02','tc03','tc04','tc05','tc06','tc07','tc08'].map(k => results[k]||'SKIP').join(' | ')} |`;
+    let doc = fs.readFileSync(DOCS_FILE, 'utf8');
+    doc = doc.replace(
+      /(\| Fecha \| Entorno[\s\S]*?\n)([\s\S]*?)(\n---|\n\n##)/,
+      (_, header, body, tail) => header + body + row + '\n' + tail
+    );
+    fs.writeFileSync(DOCS_FILE, doc, 'utf8');
+    console.log('\n[DOC] Resultado registrado en docs/cancelacion-tickets-inactivacion.md');
+  } catch (e) {
+    console.log('\n[DOC] No se pudo actualizar la doc:', e.message);
   }
 }
 
