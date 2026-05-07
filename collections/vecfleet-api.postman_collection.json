@@ -2066,7 +2066,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"tipo_formulario_id\": 3,\n    \"nro_equipo\": \"HH20680\",\n    \"activo\": 1,\n    \"valores_dinamicos\": [{\"nombre\":\"Atributo1\",\"valorDefault\":\"\",\"tipoValor\":1,\"activo\":1,\"estado\":3,\"estadosInformativos\":[],\"extraParams\":[],\"description\":\"\",\"required\":0,\"order\":0,\"genera_ticket\":0,\"servicio_id\":null,\"tareas\":[],\"atributo_dinamico_id\":4,\"value\":\"att1\"},{\"nombre\":\"Atributo2\",\"valorDefault\":\"\",\"tipoValor\":9,\"activo\":1,\"estado\":1,\"estadosInformativos\":[],\"extraParams\":{\"opciones\":[{\"id\":\"No Aplica\",\"text\":\"No Aplica\",\"estado\":3},{\"id\":\"Aprobado\",\"text\":\"Aprobado\",\"estado\":1},{\"id\":\"Desaprobado\",\"text\":\"Desaprobado\",\"estado\":2}]},\"description\":\"\",\"required\":0,\"order\":1,\"genera_ticket\":0,\"servicio_id\":null,\"tareas\":[],\"atributo_dinamico_id\":5,\"value\":\"Aprobado\"},{\"nombre\":\"Atributo3\",\"valorDefault\":\"\",\"tipoValor\":8,\"activo\":1,\"estado\":2,\"estadosInformativos\":[],\"extraParams\":{\"checks\":[{\"icon\":\"fa fa-2x fa-check\",\"text\":\"APROBADO\",\"estado\":1},{\"icon\":\"fa fa-2x fa-window-close\",\"text\":\"DESAPROBADO\",\"estado\":2},{\"icon\":\"fa fa-2x fa-low-vision\",\"text\":\"NO APLICA\",\"estado\":3}]},\"description\":\"\",\"required\":0,\"order\":2,\"genera_ticket\":0,\"servicio_id\":null,\"tareas\":[],\"atributo_dinamico_id\":6,\"value\":\"DESAPROBADO\"}]\n\n}",
+                  "raw": "{\n    \"tipo_formulario_id\": 3,\n    \"nro_equipo\": \"HH20680\",\n    \"activo\": 1,\n    \"valores_dinamicos\": [\n        {\n            \"nombre\": \"Atributo1\",\n            \"valorDefault\": \"\",\n            \"tipoValor\": 1,\n            \"activo\": 1,\n            \"estado\": 3,\n            \"estadosInformativos\": [],\n            \"extraParams\": [],\n            \"description\": \"\",\n            \"required\": 0,\n            \"order\": 0,\n            \"genera_ticket\": 0,\n            \"servicio_id\": null,\n            \"tareas\": [],\n            \"atributo_dinamico_id\": 4,\n            \"value\": \"att1\"\n        },\n        {\n            \"nombre\": \"Atributo2\",\n            \"valorDefault\": \"\",\n            \"tipoValor\": 9,\n            \"activo\": 1,\n            \"estado\": 1,\n            \"estadosInformativos\": [],\n            \"extraParams\": {\n                \"opciones\": [\n                    {\n                        \"id\": \"No Aplica\",\n                        \"text\": \"No Aplica\",\n                        \"estado\": 3\n                    },\n                    {\n                        \"id\": \"Aprobado\",\n                        \"text\": \"Aprobado\",\n                        \"estado\": 1\n                    },\n                    {\n                        \"id\": \"Desaprobado\",\n                        \"text\": \"Desaprobado\",\n                        \"estado\": 2\n                    }\n                ]\n            },\n            \"description\": \"\",\n            \"required\": 0,\n            \"order\": 1,\n            \"genera_ticket\": 0,\n            \"servicio_id\": null,\n            \"tareas\": [],\n            \"atributo_dinamico_id\": 5,\n            \"value\": \"Aprobado\"\n        },\n        {\n            \"nombre\": \"Atributo3\",\n            \"valorDefault\": \"\",\n            \"tipoValor\": 8,\n            \"activo\": 1,\n            \"estado\": 2,\n            \"estadosInformativos\": [],\n            \"extraParams\": {\n                \"checks\": [\n                    {\n                        \"icon\": \"fa fa-2x fa-check\",\n                        \"text\": \"APROBADO\",\n                        \"estado\": 1\n                    },\n                    {\n                        \"icon\": \"fa fa-2x fa-window-close\",\n                        \"text\": \"DESAPROBADO\",\n                        \"estado\": 2\n                    },\n                    {\n                        \"icon\": \"fa fa-2x fa-low-vision\",\n                        \"text\": \"NO APLICA\",\n                        \"estado\": 3\n                    }\n                ]\n            },\n            \"description\": \"\",\n            \"required\": 0,\n            \"order\": 2,\n            \"genera_ticket\": 0,\n            \"servicio_id\": null,\n            \"tareas\": [],\n            \"atributo_dinamico_id\": 6,\n            \"value\": \"DESAPROBADO\"\n        }\n    ],\n    \"activos_asociados_ids\": []\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -5302,6 +5302,181 @@
                   "value": "100",
                   "description": "int"
                 }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/moviles/vinculables-select",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/moviles/vinculables-select?movil_id={{movil_id}}",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "moviles",
+                "vinculables-select"
+              ],
+              "query": [
+                {
+                  "key": "movil_id",
+                  "value": "{{movil_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Movil Relaciones",
+      "item": [
+        {
+          "name": "POST /movil-relaciones — Crear relación",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"activo_principal_id\": \"{{movil_id}}\",\n    \"activo_asociado_id\": \"{{asociado_id}}\",\n    \"fecha_hora_inicio\": \"2026-01-01 08:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/movil-relaciones",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "movil-relaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /movil-relaciones/activa — Relación activa actual",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/movil-relaciones/activa?movil_id={{movil_id}}",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "movil-relaciones",
+                "activa"
+              ],
+              "query": [
+                {
+                  "key": "movil_id",
+                  "value": "{{movil_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /movil-relaciones — Historial completo",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/movil-relaciones?movil_id={{movil_id}}",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "movil-relaciones"
+              ],
+              "query": [
+                {
+                  "key": "movil_id",
+                  "value": "{{movil_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /movil-relaciones/{id}/cerrar — Cerrar relación",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fecha_hora_fin\": \"2026-12-31 23:59:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/movil-relaciones/{{relacion_id}}/cerrar",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "movil-relaciones",
+                "{{relacion_id}}",
+                "cerrar"
               ]
             }
           },
