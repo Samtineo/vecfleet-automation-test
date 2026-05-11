@@ -54,7 +54,7 @@ Claude ejecutará `setup.ps1` que se encarga del resto.
 | `qa-automation` | Scripts y automatizaciones del equipo QA |
 | `vecfleet-claude-config` | Configuración de Claude para el equipo |
 | `vec-fleet (no-subir-cambios)` | Código fuente de referencia (solo lectura local) |
-| `vecfleet-quasar` | App web/mobile (rama `develop`, con patch de testing aplicado) |
+| `vecfleet-quasar` | App web/mobile (rama `develop`, con patch de testing aplicado) — **solo lectura para QA** |
 
 ---
 
@@ -70,6 +70,18 @@ Cada miembro del equipo usa sus **propias credenciales** de vec-dev.
    VF_BASE_URL=https://vec-dev.vecfleet.io/ws/Public/index.php/api
    ```
 3. Este archivo está en `.gitignore` — **nunca se commitea**
+
+---
+
+## Política de cambios en vecfleet-quasar
+
+> **El equipo de QA NO debe pushear cambios a `vecfleet-quasar` bajo ningún concepto.**
+
+Este repo pertenece al equipo de desarrollo. Los cambios que QA aplica sobre él (vía `quasar.patch`) son **exclusivamente locales** y están pensados para adaptar la app al entorno de testing.
+
+- Nunca hacer `git push` en `vecfleet-quasar`
+- Nunca commitear cambios en `vecfleet-quasar`
+- Si se necesita modificar algo para testing, el cambio va en `quasar.patch` dentro de este repo (`vecfleet-automation-test`), no en quasar directamente
 
 ---
 
