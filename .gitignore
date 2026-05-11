@@ -7,3 +7,6 @@ test-results/
 # PHP (legacy)
 vendor/
 .phpunit.result.cache
+
+# Credenciales personales de QA (nunca commitear)
+test-app/environments/vec-dev.env

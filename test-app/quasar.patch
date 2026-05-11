@@ -1,0 +1,147 @@
+diff --git a/src-capacitor/android/app/build.gradle b/src-capacitor/android/app/build.gradle
+index 5ccad18..d8ecc2e 100644
+--- a/src-capacitor/android/app/build.gradle
++++ b/src-capacitor/android/app/build.gradle
+@@ -7,8 +7,8 @@ android {
+         applicationId "org.vecfleet.io"
+         minSdkVersion rootProject.ext.minSdkVersion
+         targetSdkVersion rootProject.ext.targetSdkVersion
+-        versionCode 77
+-        versionName "3.3.3"
++        versionCode 1
++        versionName "1.0"
+         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+         aaptOptions {
+              // Files and dirs to omit from the packaged assets dir, including json files
+diff --git a/src-capacitor/android/app/src/main/AndroidManifest.xml b/src-capacitor/android/app/src/main/AndroidManifest.xml
+index d216191..423e471 100644
+--- a/src-capacitor/android/app/src/main/AndroidManifest.xml
++++ b/src-capacitor/android/app/src/main/AndroidManifest.xml
+@@ -1,5 +1,6 @@
+-<?xml version="1.0" encoding="utf-8" ?>
++<?xml version="1.0" encoding="utf-8"?>
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
++
+     <application
+         android:usesCleartextTraffic="true"
+         android:allowBackup="true"
+@@ -8,6 +9,7 @@
+         android:roundIcon="@mipmap/ic_launcher_round"
+         android:supportsRtl="true"
+         android:theme="@style/AppTheme">
++
+         <activity
+             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+             android:name=".MainActivity"
+@@ -15,17 +17,12 @@
+             android:theme="@style/AppTheme.NoActionBarLaunch"
+             android:launchMode="singleTask"
+             android:exported="true">
++
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+-            <!-- Deep link: SSO callbacks (vecfleet://auth/*) -->
+-            <intent-filter>
+-                <action android:name="android.intent.action.VIEW" />
+-                <category android:name="android.intent.category.DEFAULT" />
+-                <category android:name="android.intent.category.BROWSABLE" />
+-                <data android:scheme="vecfleet" android:host="auth" />
+-            </intent-filter>
++
+         </activity>
+
+         <provider
+@@ -33,16 +30,18 @@
+             android:authorities="${applicationId}.fileprovider"
+             android:exported="false"
+             android:grantUriPermissions="true">
+-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
++            <meta-data
++                android:name="android.support.FILE_PROVIDER_PATHS"
++                android:resource="@xml/file_paths"></meta-data>
+         </provider>
+     </application>
+
+     <!-- Permissions -->
+
+     <uses-permission android:name="android.permission.INTERNET" />
+-    <uses-permission android:name="android.permission.CAMERA" />
+     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
++    <uses-permission android:name="android.permission.CAMERA" />
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+ </manifest>
+diff --git a/src-capacitor/android/build.gradle b/src-capacitor/android/build.gradle
+index e06e666..9cc72cb 100644
+--- a/src-capacitor/android/build.gradle
++++ b/src-capacitor/android/build.gradle
+@@ -7,7 +7,7 @@ buildscript {
+         mavenCentral()
+     }
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:8.2.2'
++        classpath 'com.android.tools.build:gradle:8.0.0'
+         classpath 'com.google.gms:google-services:4.3.15'
+
+         // NOTE: Do not place your application dependencies here; they belong
+diff --git a/src-capacitor/android/gradle/wrapper/gradle-wrapper.properties b/src-capacitor/android/gradle/wrapper/gradle-wrapper.properties
+index 8612e3f..761b8f0 100644
+--- a/src-capacitor/android/gradle/wrapper/gradle-wrapper.properties
++++ b/src-capacitor/android/gradle/wrapper/gradle-wrapper.properties
+@@ -1,6 +1,6 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-all.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-8.0.2-all.zip
+ networkTimeout=10000
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/src-capacitor/android/variables.gradle b/src-capacitor/android/variables.gradle
+index 2f74094..5946ada 100644
+--- a/src-capacitor/android/variables.gradle
++++ b/src-capacitor/android/variables.gradle
+@@ -1,7 +1,7 @@
+ ext {
+     minSdkVersion = 22
+-    compileSdkVersion = 35
+-    targetSdkVersion = 35
++    compileSdkVersion = 33
++    targetSdkVersion = 33
+     androidxActivityVersion = '1.7.0'
+     androidxAppCompatVersion = '1.6.1'
+     androidxCoordinatorLayoutVersion = '1.2.0'
+diff --git a/src/config/config.json b/src/config/config.json
+index d96a175..f3daef6 100644
+--- a/src/config/config.json
++++ b/src/config/config.json
+@@ -2,10 +2,10 @@
+ 	"langDefault": "es-ap-es",
+ 	"checklistFormularioGridAmountPerScroll": 10,
+ 	"apiUrlLang": "https://flow.vecfleet.io",
+-	"apiUrl": "https://apiapp.vec.com.ar",
+-	"apiUrl-BACK": "http://localhost:80",
+-	"apiUrlPivot": "https://apiapp.vec.com.ar/api/url/",
+-	"apiUrlPivot-BACK": "http://localhost:80/api/public/url/",
++	"apiUrl": "https://vec-dev.vecfleet.io/ws/Public",
++	"apiUrl-BACK": "https://apiapp.vec.com.ar",
++	"apiUrlPivot": "https://vec-dev.vecfleet.io/ws/Public/index.php/api/public/url/",
++	"apiUrlPivot-BACK": "https://apiapp.vec.com.ar/api/url/",
+ 	"googleMapsKey": "AIzaSyDctvLHWYS3Bu1aD7cqDzlXK6sqYTyZ_1s",
+ 	"key": "randomdatakey123456",
+ 	"iv": "randomdataiv123456",
+diff --git a/src/store/auth/actions.js b/src/store/auth/actions.js
+index 057d7ea..30cf8e6 100644
+--- a/src/store/auth/actions.js
++++ b/src/store/auth/actions.js
+@@ -38,7 +38,7 @@ export function getLogin({ commit }, data) {
+       url: Config.get("apiUrlPivot") + data.user_id
+     })
+       .then(res => {
+-        const url_entorno = res.data.url_entorno;
++        const url_entorno = res.data.url_entorno || Config.get("apiUrl");
+         const url_avl = res.data.url_avl;
+         if (!url_entorno) {
+           const err = new Error("Invalid client ID");
