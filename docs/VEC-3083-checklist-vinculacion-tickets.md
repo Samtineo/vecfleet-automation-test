@@ -46,8 +46,8 @@ Auth header: `Authorization-Token: <token>`
 
 | CA | Descripción | Tipo | Resultado |
 |---|---|---|---|
-| CA1 | Configurar TipoFormulario con estados para buscador (UI) | UI | ⏳ PENDIENTE RETEST |
-| CA2 | Buscador filtra por estados configurados en TipoFormulario (UI) | UI | ⏳ PENDIENTE RETEST |
+| CA1 | Configurar TipoFormulario con estados para buscador (UI) | UI | ✅ PASS |
+| CA2 | Buscador filtra por estados configurados en TipoFormulario (UI) | UI | ✅ PASS |
 | CA3 | `GET /tickets/simple-search?estados=ABIERTO` retorna tickets en ese estado | API | ✅ PASS |
 | CA4 | `POST /formulario` con `ticket_id` crea formulario vinculado exitosamente | API | ✅ PASS |
 | CA5 | `POST /formulario` sin `ticket_id` sigue funcionando (retrocompatibilidad) | API | ✅ PASS |
@@ -59,11 +59,11 @@ Auth header: `Authorization-Token: <token>`
 | CA11 | Grid de tickets no crashea con los cambios de VEC-3083 | Manual | ✅ PASS |
 | CA12 | Sección "Checklists asociados" visible en la vista de detalle del ticket | UI | ✅ PASS |
 | CA13 | Entradas muestran: nombre del checklist, fecha de respuesta, usuario y acceso | UI | ✅ PASS |
-| CA14 | Clic en ícono de acceso abre el formulario vinculado | UI | ⏳ PENDIENTE RETEST |
-| CA15 | Formulario visualizado muestra link de regreso al ticket | UI | ⏳ PENDIENTE RETEST |
-| CA16 | La pantalla de formulario reutiliza la pantalla existente | UI | ⏳ PENDIENTE RETEST |
+| CA14 | Clic en ícono de acceso abre el formulario vinculado | UI | ✅ PASS |
+| CA15 | Formulario visualizado muestra link de regreso al ticket | UI | ✅ PASS |
+| CA16 | La pantalla de formulario reutiliza la pantalla existente | UI | ✅ PASS |
 
-**Estado actual:** 11 PASS — 5 PENDIENTE RETEST (fixes aplicados, pendiente deploy y verificación)
+**Estado actual:** 16/16 PASS ✅
 
 ---
 
@@ -114,6 +114,6 @@ Mismo problema en `castValue()` y en el render (`.map` sobre `opciones`).
 
 ## 7. Estado del QA
 
-**En progreso** — Los 5 CAs pendientes tienen fixes aplicados en el codebase. Están pendientes de deploy a vec-dev y retest.
+**COMPLETADO** — 16/16 CAs aprobados en vec-dev.
 
-QA Report en Jira: **pendiente de creación** (se crea cuando todos los CAs estén ejecutados).
+QA Report en Jira: **creado** (ver tarea creada tras finalización).
