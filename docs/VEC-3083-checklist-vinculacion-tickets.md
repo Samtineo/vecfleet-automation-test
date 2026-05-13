@@ -15,11 +15,11 @@ Permite vincular la respuesta de un checklist a un ticket existente (en estado p
 
 | Recurso | Valor |
 |---|---|
-| TipoFormulario de prueba | ID `44` ("QA VEC-3083"), `con_ticket = true` |
-| `ticket_estados_json` | `["ABIERTO"]` |
+| TipoFormulario de prueba | ID `44` ("QA VEC-3083"), `con_ticket = true`, `con_movil = true` |
+| `ticket_estados_json` | `["CERRADO"]` |
 | Ticket de prueba | ID `14`, Móvil `1`, estado `ABIERTO` |
 | Formularios vinculados | IDs `282`, `283` (ticket_id = 14) |
-| Atributo dinámico | ID del atributo de texto creado para el tipo 44 |
+| Atributo dinámico | ID `95`, tipoValor `9` (SELECT_COMPUESTO), extraParams = null |
 
 ---
 
@@ -39,15 +39,15 @@ Auth header: `Authorization-Token: <token>`
 
 ## 4. Ejecución del QA
 
-**Fecha:** 2026-05-12
+**Fecha:** 2026-05-12 / 2026-05-13
 **Entorno:** vec-dev
 
 ### Resumen
 
 | CA | Descripción | Tipo | Resultado |
 |---|---|---|---|
-| CA1 | Configurar TipoFormulario con estados para buscador (UI) | UI | ❌ BLOQUEADO |
-| CA2 | Buscador filtra por estados configurados en TipoFormulario (UI) | UI | ❌ BLOQUEADO |
+| CA1 | Configurar TipoFormulario con estados para buscador (UI) | UI | ⏳ PENDIENTE RETEST |
+| CA2 | Buscador filtra por estados configurados en TipoFormulario (UI) | UI | ⏳ PENDIENTE RETEST |
 | CA3 | `GET /tickets/simple-search?estados=ABIERTO` retorna tickets en ese estado | API | ✅ PASS |
 | CA4 | `POST /formulario` con `ticket_id` crea formulario vinculado exitosamente | API | ✅ PASS |
 | CA5 | `POST /formulario` sin `ticket_id` sigue funcionando (retrocompatibilidad) | API | ✅ PASS |
@@ -59,45 +59,50 @@ Auth header: `Authorization-Token: <token>`
 | CA11 | Grid de tickets no crashea con los cambios de VEC-3083 | Manual | ✅ PASS |
 | CA12 | Sección "Checklists asociados" visible en la vista de detalle del ticket | UI | ✅ PASS |
 | CA13 | Entradas muestran: nombre del checklist, fecha de respuesta, usuario y acceso | UI | ✅ PASS |
-| CA14 | Clic en ícono de acceso abre el formulario vinculado | UI | ❌ BLOQUEADO |
-| CA15 | Formulario visualizado muestra link de regreso al ticket | UI | ❌ BLOQUEADO |
-| CA16 | La pantalla de formulario reutiliza la pantalla existente | UI | ❌ BLOQUEADO |
+| CA14 | Clic en ícono de acceso abre el formulario vinculado | UI | ⏳ PENDIENTE RETEST |
+| CA15 | Formulario visualizado muestra link de regreso al ticket | UI | ⏳ PENDIENTE RETEST |
+| CA16 | La pantalla de formulario reutiliza la pantalla existente | UI | ⏳ PENDIENTE RETEST |
 
-**Resultado parcial:** 11/16 PASS — 5 BLOQUEADOS por bug (ver sección 5)
+**Estado actual:** 11 PASS — 5 PENDIENTE RETEST (fixes aplicados, pendiente deploy y verificación)
 
 ---
 
-## 5. Bug: Crash en múltiples puntos del flujo
+## 5. Bugs encontrados y fixes aplicados
 
-Durante el QA se identificó un bug que crashea la pantalla en tres escenarios distintos. La causa raíz en `TipoFormularioAbm.js` está documentada como comentario en VEC-3083. Para `FormularioAbm.js` la causa raíz exacta está pendiente de investigación.
+### Bug 1: Crash en edición de TipoFormulario con `con_ticket = true` (CA1, CA2)
 
-### Puntos afectados
+**Síntoma:** La pantalla cierra inesperadamente al entrar al ABM de edición de TipoFormulario 44.
 
-**1. Editar un Tipo de Formulario con `con_ticket = true` (TipoFormularioAbm.js)**
+**Root cause:** `initForm()` en `TipoFormularioAbm.js` incluye `GET /tickets/estados` dentro de un `Promise.all`. Cuando esa promesa falla, el `.catch` externo ejecuta `component.exit()`, cerrando el formulario.
 
-La pantalla cierra inesperadamente al entrar al ABM de edición.
+**Fix:** Agregar `.catch(() => [])` a la llamada de `GET /tickets/estados` para que su falla no propague al catch externo.
 
-- **Causa raíz:** `initForm()` incluye `GET /tickets/estados` dentro de un `Promise.all`. Cualquier fallo en esa promesa ejecuta `component.exit()` en el `.catch`, cerrando el formulario.
-- **CAs bloqueados:** CA1, CA2
+**Commit:** `21f4a69935` — `VEC-3083 | Fix crash en edición de TipoFormulario con con_ticket = true`
 
-**2. Completar un formulario vinculado a un ticket (FormularioAbm.js)**
+**Estado:** Fix aplicado. Pendiente retest en vec-dev (CA1, CA2).
 
-Al intentar completar/enviar un formulario que tiene `ticket_id` asignado, la pantalla falla.
+---
 
-- **Causa raíz:** Pendiente de investigación en `FormularioAbm.js`
-- **Impacto:** Afecta el flujo funcional principal de la feature
+### Bug 2: Crash al visualizar/completar un formulario con atributo SELECT_COMPUESTO sin opciones (CA14, CA15, CA16)
 
-**3. Visualizar un formulario desde "Checklists asociados" (FormularioAbm.js)**
+**Síntoma:** La pantalla falla al cargar el formulario cuando:
+- Se hace clic en el ícono 🔍 en la sección "Checklists asociados" de un ticket (VIEW mode).
+- Se intenta completar un formulario que tiene `con_ticket = true` (ADD/EDIT mode).
 
-Al hacer clic en el ícono de detalle (🔍) en la sección "Checklists asociados" de la vista del ticket, la pantalla falla al cargar el formulario.
+**Root cause:** `InstanciaSelect.recalcularEstado()` accede a `this.props.atributo.extraParams.opciones` sin verificar previamente que `extraParams` no sea `null`. Cuando un atributo dinámico de `tipoValor=9` (SELECT_COMPUESTO) tiene `extraParams=null` (sin opciones configuradas), el acceso a `.opciones` sobre `null` lanza `TypeError: Cannot read property 'opciones' of null`.
 
-- **Causa raíz:** Pendiente de investigación en `FormularioAbm.js`
-- **CAs bloqueados:** CA14, CA15, CA16
+El crash ocurre en la cadena: `componentDidMount()` → `handleChangeAndUpdateFather()` → `recalcularEstado()`.
 
-### Notas adicionales
+Mismo problema en `castValue()` y en el render (`.map` sobre `opciones`).
 
-- CA10 y CA11 se verificaron manualmente con ticket ID `14` (grid no estaba disponible por bug preexistente de alias SQL en VEC-1138).
-- CA12 y CA13 se validaron visualmente; la sección renderiza correctamente cuando los datos están disponibles.
+**Fix:** Agregar null-check `if (this.props.atributo.extraParams && ...)` en tres lugares de `InstanciaSelect.js`:
+1. `recalcularEstado()`: antes de acceder a `extraParams.opciones`
+2. `castValue()`: antes de acceder a `extraParams.opciones`
+3. Render: antes de hacer `.map()` sobre `extraParams.opciones`
+
+**Commit:** `d230b88ef` — `fix: evitar crash en InstanciaSelect cuando extraParams es null`
+
+**Estado:** Fix aplicado. Pendiente retest en vec-dev (CA14, CA15, CA16).
 
 ---
 
@@ -109,5 +114,6 @@ Al hacer clic en el ícono de detalle (🔍) en la sección "Checklists asociado
 
 ## 7. Estado del QA
 
-**En progreso** — Pendiente resolución del bug de crash para completar CA1, CA2, CA14, CA15, CA16.
-QA Report en Jira: pendiente de creación (se crea cuando todos los CAs estén ejecutados).
+**En progreso** — Los 5 CAs pendientes tienen fixes aplicados en el codebase. Están pendientes de deploy a vec-dev y retest.
+
+QA Report en Jira: **pendiente de creación** (se crea cuando todos los CAs estén ejecutados).
