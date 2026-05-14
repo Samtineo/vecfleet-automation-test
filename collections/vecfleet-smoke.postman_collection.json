@@ -1631,6 +1631,290 @@
           ]
         }
       ]
+    },
+    {
+      "name": "13 - Vinculación de Activos",
+      "item": [
+        {
+          "name": "GET /movil-relaciones — historial por móvil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/movil-relaciones?movil_id=22",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "movil-relaciones"
+              ],
+              "query": [
+                {
+                  "key": "movil_id",
+                  "value": "22"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array de relaciones', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /movil-relaciones/activa — relación activa por móvil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/movil-relaciones/activa?movil_id=22",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "movil-relaciones",
+                "activa"
+              ],
+              "query": [
+                {
+                  "key": "movil_id",
+                  "value": "22"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Puede retornar 200 (con relación activa) o 404 (sin relación activa) — ambos son válidos",
+                  "pm.test('No devuelve error de servidor (500)', () => {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "pm.test('No devuelve 401 ni 403', () => {",
+                  "    pm.expect(pm.response.code).to.not.be.oneOf([401, 403]);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "14 - Checklist Ítems Correctivo (VEC-3122)",
+      "item": [
+        {
+          "name": "GET /items/simple-search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - Búsqueda de ítems', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array de ítems', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/items/simple-search?texto=frenos",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "items",
+                "simple-search"
+              ],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "frenos"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /tipoformularios — lista con atributos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - Lista tipoformularios', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array de tipo formularios', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array').and.not.be.empty;",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/tipoformularios",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "tipoformularios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /tipoformularios/41 — TF con config de tareas (sin items)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - TF 41 existe', () => pm.response.to.have.status(200));",
+                  "pm.test('TF 41 tiene atributos dinámicos', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('atributos_dinamicos');",
+                  "    pm.expect(body.atributos_dinamicos).to.be.an('array').and.not.be.empty;",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 3000ms', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/tipoformularios/41",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "tipoformularios",
+                "41"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Editar Presupuesto Ticket Cerrado (VEC-3163)",
+      "item": [
+        {
+          "name": "GET ticket-presupuestos/ticket/:ticketId/grid",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization-Token", "value": "{{token}}" }],
+            "url": {
+              "raw": "{{url}}/ticket-presupuestos/ticket/6/grid",
+              "host": ["{{url}}"],
+              "path": ["ticket-presupuestos", "ticket", "6", "grid"]
+            }
+          }
+        },
+        {
+          "name": "POST ticket-presupuestos/ticket/:ticketId (editar último)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization-Token", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"idPresupuesto\": 7, \"manoDeObra\": 200, \"repuestos\": 200, \"otros\": 0}"
+            },
+            "url": {
+              "raw": "{{url}}/ticket-presupuestos/ticket/6",
+              "host": ["{{url}}"],
+              "path": ["ticket-presupuestos", "ticket", "6"]
+            }
+          }
+        },
+        {
+          "name": "PUT tickets/adjuntos/:ticketId",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization-Token", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"adjuntos\": []}"
+            },
+            "url": {
+              "raw": "{{url}}/tickets/adjuntos/6",
+              "host": ["{{url}}"],
+              "path": ["tickets", "adjuntos", "6"]
+            }
+          }
+        }
+      ]
     }
   ]
 }
