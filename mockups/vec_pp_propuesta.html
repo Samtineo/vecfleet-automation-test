@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>VecFleet — Propuesta: Featurización Período de Presupuestos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f4f5f8;
+      color: #2d2d2d;
+      padding: 48px 24px;
+    }
+
+    .wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .doc-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .logo-vec {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #30B79C;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .logo-fleet {
+      font-size: 0.5rem;
+      color: #aaa;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .divider-v {
+      width: 1px;
+      height: 36px;
+      background: #ddd;
+    }
+
+    .doc-header-text h1 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #1D0D38;
+    }
+
+    .doc-header-text p {
+      font-size: 0.78rem;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .badge {
+      margin-left: auto;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Sections */
+    .section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #30B79C;
+      margin-bottom: 14px;
+    }
+
+    .section p {
+      font-size: 0.9rem;
+      color: #444;
+      line-height: 1.75;
+    }
+
+    /* Config block */
+    .config-block {
+      background: #1D0D38;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #30B79C;
+      margin: 18px 0 0;
+      display: inline-block;
+    }
+
+    /* Behavior cards */
+    .behavior-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .behavior-card {
+      border-radius: 8px;
+      padding: 20px 22px;
+    }
+
+    .behavior-card.enabled {
+      background: rgba(48, 183, 156, 0.07);
+      border: 1px solid rgba(48, 183, 156, 0.3);
+    }
+
+    .behavior-card.disabled {
+      background: rgba(0,0,0,0.03);
+      border: 1px solid #e8e8e8;
+    }
+
+    .behavior-card h3 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .behavior-card.enabled h3 { color: #1a7a65; }
+    .behavior-card.disabled h3 { color: #888; }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot.green { background: #30B79C; }
+    .dot.gray  { background: #bbb; }
+
+    .behavior-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .behavior-card ul li {
+      font-size: 0.84rem;
+      color: #555;
+      line-height: 1.55;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .behavior-card ul li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: #ccc;
+      font-size: 0.75rem;
+    }
+
+    .behavior-card.enabled ul li::before { color: #30B79C; }
+
+    /* Submódulos list */
+    .submodule-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .submodule-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: rgba(48,183,156,0.06);
+      border-radius: 6px;
+      font-size: 0.84rem;
+      color: #1D0D38;
+      font-weight: 500;
+    }
+
+    .submodule-num {
+      width: 20px; height: 20px;
+      background: #30B79C;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Permissions table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 0.85rem;
+    }
+
+    thead tr {
+      background: #f8f8f8;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #888;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #eee;
+    }
+
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f2f2f2;
+      color: #444;
+      vertical-align: top;
+    }
+
+    td:first-child {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: #1D0D38;
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    /* Fixed rule */
+    .rule-box {
+      background: rgba(29,13,56,0.04);
+      border-left: 3px solid #1D0D38;
+      border-radius: 0 6px 6px 0;
+      padding: 14px 18px;
+      margin-top: 4px;
+      font-size: 0.875rem;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .doc-footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #bbb;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div>
+      <div class="logo-vec">VEC</div>
+      <div class="logo-fleet">fleet</div>
+    </div>
+    <div class="divider-v"></div>
+    <div class="doc-header-text">
+      <h1>Propuesta: Featurización del Módulo Período de Presupuestos</h1>
+      <p>Área de QA · Mayo 2026 · Para revisión de Producto</p>
+    </div>
+    <div class="badge">Pendiente de aprobación</div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section">
+    <div class="section-title">Contexto</div>
+    <p>
+      Actualmente la funcionalidad de Períodos de Presupuesto está disponible en la plataforma pero no está protegida como feature vendible.
+      Cualquier usuario con permiso de editar perfiles puede autoasignarse los permisos de PP y comenzar a utilizarla sin que el cliente haya contratado el módulo.
+      Esta propuesta resuelve esa situación y mejora la experiencia de navegación del módulo.
+    </p>
+  </div>
+
+  <!-- Config -->
+  <div class="section">
+    <div class="section-title">Solución propuesta</div>
+    <p>Implementar la siguiente configuración a nivel tenant:</p>
+    <div class="config-block">periodoPresupuestario.habilitado = true | false</div>
+  </div>
+
+  <!-- Comportamiento -->
+  <div class="section">
+    <div class="section-title">Comportamiento según estado de la config</div>
+    <div class="behavior-grid">
+
+      <div class="behavior-card enabled">
+        <h3><div class="dot green"></div> Cuando habilitado = true</h3>
+        <ul>
+          <li>Los permisos de PP se habilitan y pueden asignarse a perfiles, convirtiendo la funcionalidad en un feature vendible y controlado por tenant.</li>
+          <li>Se crea en el menú un nuevo módulo <strong>Período de Presupuestos</strong> con los siguientes submódulos:</li>
+        </ul>
+        <div class="submodule-list" style="margin-top:12px;">
+          <div class="submodule-item"><div class="submodule-num">1</div> Región</div>
+          <div class="submodule-item"><div class="submodule-num">2</div> Subregión</div>
+          <div class="submodule-item"><div class="submodule-num">3</div> Bases</div>
+          <div class="submodule-item"><div class="submodule-num">4</div> Config Período de Presupuestos</div>
+        </div>
+        <ul style="margin-top:12px;">
+          <li>Región, Subregión y Bases dejan de mostrarse en Administración y pasan al nuevo módulo. Su funcionamiento no cambia — solo cambia su ubicación en el menú.</li>
+        </ul>
+      </div>
+
+      <div class="behavior-card disabled">
+        <h3><div class="dot gray"></div> Cuando habilitado = false</h3>
+        <ul>
+          <li>Los permisos de PP no están disponibles para asignar a perfiles.</li>
+          <li>El módulo Período de Presupuestos no se muestra en el menú.</li>
+          <li>Región, Subregión y Bases se mantienen en el módulo de Administración, como en el comportamiento actual.</li>
+          <li>El submódulo Config Período de Presupuestos no se muestra en ningún lugar del menú.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Permisos -->
+  <div class="section">
+    <div class="section-title">Modelo de permisos</div>
+    <p style="margin-bottom:16px;">
+      El acceso a los submódulos Región, Subregión y Bases no requiere permisos de PP — cualquier usuario con acceso a esos módulos puede seguir operándolos con normalidad.
+      Los permisos de PP controlan exclusivamente qué se ve y qué se puede hacer dentro de las secciones de presupuesto.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Permiso</th>
+          <th>Habilita</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PRESUPUESTO_PERIODO_ACCESO</td>
+          <td>Acceso al submódulo Config Período de Presupuestos</td>
+        </tr>
+        <tr>
+          <td>PRESUPUESTO_ACCESO</td>
+          <td>Sección de presupuesto dentro de Región, Subregión y Bases</td>
+        </tr>
+        <tr>
+          <td>PRESUPUESTO_CONSULTAR</td>
+          <td>Visualización de datos de presupuesto</td>
+        </tr>
+        <tr>
+          <td>PRESUPUESTO_EDITAR</td>
+          <td>Edición de datos de presupuesto</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Regla fija -->
+  <div class="section">
+    <div class="section-title">Regla fija</div>
+    <div class="rule-box">
+      El submódulo <strong>Config Período de Presupuestos</strong> es exclusivo del módulo Período de Presupuestos.
+      No forma parte del módulo de Administración bajo ninguna configuración.
+    </div>
+  </div>
+
+  <div class="doc-footer">VecFleet · Área de QA · Documento de propuesta — no aprobado</div>
+
+</div>
+</body>
+</html>

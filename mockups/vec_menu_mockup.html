@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>VecFleet — Mockup Período de Presupuestos</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #f0f2f5;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 268px;
+      min-width: 268px;
+      background: #1D0D38;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 18px;
+    }
+
+    .logo-img {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-vec {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #30B79C;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .logo-fleet {
+      font-size: 0.5rem;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: -2px;
+    }
+
+    nav { flex: 1; padding-bottom: 16px; }
+
+    /* ── MENU ITEMS ── */
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 18px;
+      color: rgba(255,255,255,0.72);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 400;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+      user-select: none;
+      letter-spacing: 0.2px;
+    }
+
+    .menu-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+    }
+
+    .menu-item.active {
+      background: rgba(48, 183, 156, 0.12);
+      color: #fff;
+      border-left: 3px solid #30B79C;
+      padding-left: 15px;
+    }
+
+    .menu-item.active .material-icons { color: #30B79C; }
+
+    .material-icons {
+      font-size: 1.15rem;
+      color: rgba(255,255,255,0.5);
+      width: 22px;
+      flex-shrink: 0;
+    }
+
+    .menu-label { flex: 1; }
+
+    .menu-arrow {
+      font-size: 0.85rem !important;
+      color: rgba(255,255,255,0.3) !important;
+      transition: transform 0.2s;
+      width: auto !important;
+    }
+
+    .menu-item.open .menu-arrow { transform: rotate(180deg); }
+
+    /* ── SUBMENU ── */
+    .submenu { display: none; }
+    .submenu.open { display: block; }
+
+    .submenu-item {
+      display: block;
+      padding: 9px 18px 9px 54px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.84rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      letter-spacing: 0.1px;
+    }
+
+    .submenu-item:hover {
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.85);
+    }
+
+    .submenu-item.active {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* ── NEW MODULE HIGHLIGHT ── */
+    .menu-item.new-module {
+      background: rgba(48, 183, 156, 0.1);
+      color: #fff;
+      border-left: 3px solid #30B79C;
+      padding-left: 15px;
+    }
+
+    .menu-item.new-module .material-icons { color: #30B79C; }
+
+    .badge-new {
+      background: #30B79C;
+      color: #1D0D38;
+      font-size: 0.58rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+
+    .submenu-item.active-sub { color: #30B79C; font-weight: 500; }
+
+    /* ── TOPBAR ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      background: #fff;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.09);
+      flex-shrink: 0;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+    .topbar-icon { font-size: 1.2rem; color: #666; cursor: pointer; }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .user-name { font-size: 0.88rem; color: #444; }
+
+    .avatar {
+      width: 34px; height: 34px;
+      background: #1D0D38;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      padding: 28px 32px;
+      overflow-y: auto;
+      background: #f4f5f8;
+    }
+
+    .page-title {
+      font-size: 1.35rem;
+      color: #1a1a2e;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-bottom: 24px;
+    }
+
+    .breadcrumb .bc-active { color: #30B79C; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .kpi-label { font-size: 0.75rem; color: #999; margin-bottom: 8px; }
+    .kpi-value { font-size: 1.35rem; font-weight: 600; color: #1D0D38; }
+    .kpi-sub { font-size: 0.72rem; color: #bbb; margin-top: 3px; }
+
+    .progress-bar {
+      height: 5px; background: #f0f0f0;
+      border-radius: 3px; margin-top: 10px; overflow: hidden;
+    }
+
+    .progress-fill { height: 100%; border-radius: 3px; }
+
+    .callout {
+      background: rgba(48,183,156,0.07);
+      border: 1px dashed rgba(48,183,156,0.35);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 0.84rem;
+      color: #555;
+      line-height: 1.65;
+    }
+
+    .callout strong { color: #1D0D38; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-img">
+      <div>
+        <div class="logo-vec">VEC</div>
+        <div class="logo-fleet">fleet</div>
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <!-- Infracciones -->
+    <div class="menu-item" onclick="toggle(this, null)">
+      <span class="material-icons">warning_amber</span>
+      <span class="menu-label">Infracciones</span>
+    </div>
+
+    <!-- Vehículos -->
+    <div class="menu-item" onclick="toggle(this, 'sub-vehiculos')">
+      <span class="material-icons">directions_car</span>
+      <span class="menu-label">Vehículos</span>
+      <span class="material-icons menu-arrow">expand_more</span>
+    </div>
+    <div class="submenu" id="sub-vehiculos">
+      <div class="submenu-item">Móviles</div>
+      <div class="submenu-item">Importador</div>
+    </div>
+
+    <!-- Disponibilidad -->
+    <div class="menu-item" onclick="toggle(this, 'sub-disponibilidad')">
+      <span class="material-icons">check_circle_outline</span>
+      <span class="menu-label">Disponibilidad</span>
+      <span class="material-icons menu-arrow">expand_more</span>
+    </div>
+    <div class="submenu" id="sub-disponibilidad">
+      <div class="submenu-item">Calendario</div>
+    </div>
+
+    <!-- Llantas -->
+    <div class="menu-item" onclick="toggle(this, 'sub-llantas')">
+      <span class="material-icons">album</span>
+      <span class="menu-label">Llantas</span>
+      <span class="material-icons menu-arrow">expand_more</span>
+    </div>
+    <div class="submenu" id="sub-llantas">
+      <div class="submenu-item">Tyres</div>
+      <div class="submenu-item">Asignaciones</div>
+      <div class="submenu-item">Inspecciones</div>
+      <div class="submenu-item">Marcas</div>
+      <div class="submenu-item">Modelos</div>
+    </div>
+
+    <!-- Gastos Extras -->
+    <div class="menu-item" onclick="toggle(this, 'sub-gastos')">
+      <span class="material-icons">credit_card</span>
+      <span class="menu-label">Gastos Extras</span>
+      <span class="material-icons menu-arrow">expand_more</span>
+    </div>
+    <div class="submenu" id="sub-gastos">
+      <div class="submenu-item">Listado</div>
+    </div>
+
+    <!-- Equipamiento -->
+    <div class="menu-item" onclick="toggle(this, 'sub-equipamiento')">
+      <span class="material-icons">build_circle</span>
+      <span class="menu-label">Equipamiento</span>
+      <span class="material-icons menu-arrow">expand_more</span>
+    </div>
+    <div class="submenu" id="sub-equipamiento">
+      <div class="submenu-item">Listado</div>
+    </div>
+
+    <!-- ══ NUEVO: Período de Presupuestos ══ -->
+    <div class="menu-item new-module open" onclick="toggle(this, 'sub-pp')">
+      <span class="material-icons">account_balance_wallet</span>
+      <span class="menu-label">Período de Presupuestos</span>
+      <span class="badge-new">Nuevo</span>
+      <span class="material-icons menu-arrow" style="transform:rotate(180deg);">expand_more</span>
+    </div>
+    <div class="submenu open" id="sub-pp">
+      <div class="submenu-item active-sub">Región</div>
+      <div class="submenu-item">Subregión</div>
+      <div class="submenu-item">Bases</div>
+      <div class="submenu-item">Config Período de Presupuestos</div>
+    </div>
+
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="material-icons topbar-icon">menu</span>
+      <span class="material-icons topbar-icon" style="font-size:1rem;">crop_square</span>
+    </div>
+    <div class="topbar-right">
+      <span class="user-name">Samuel Tineo</span>
+      <div class="avatar">ST</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="page-title">Período de Presupuestos — Región</div>
+    <div class="breadcrumb">
+      Período de Presupuestos / <span class="bc-active">Región</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Presupuesto asignado</div>
+        <div class="kpi-value">$2.400.000</div>
+        <div class="kpi-sub">Período activo</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:68%; background:#30B79C;"></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Distribuido</div>
+        <div class="kpi-value">$1.800.000</div>
+        <div class="kpi-sub">75% del total</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:75%; background:#aeb3f2;"></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Comprometido</div>
+        <div class="kpi-value">$940.000</div>
+        <div class="kpi-sub">Tickets aprobados</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:52%; background:#F2C037;"></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Consumido</div>
+        <div class="kpi-value">$310.000</div>
+        <div class="kpi-sub">Tickets cerrados</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:17%; background:#FF3145;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Vista de ejemplo.</strong> Mockup del módulo <strong>Período de Presupuestos</strong> propuesto para el menú de VecFleet.
+      Contiene los submódulos <strong>Región, Subregión, Bases</strong> y <strong>Config Período de Presupuestos</strong>.
+      Los colores y estructura replican el design system actual de la plataforma.
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggle(el, subId) {
+    if (!subId) return;
+    const sub = document.getElementById(subId);
+    if (!sub) return;
+    const isOpen = sub.classList.contains('open');
+    sub.classList.toggle('open', !isOpen);
+    el.classList.toggle('open', !isOpen);
+  }
+</script>
+</body>
+</html>
