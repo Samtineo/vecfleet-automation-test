@@ -16,4 +16,5 @@ El entorno de prueba por defecto es vec-dev.vecfleet.io. No ejecutes ningún cas
 > **Alternativas equivalentes (texto natural):**
 > - `Comencemos con VEC-XXXX`
 > - `Arrancamos con VEC-XXXX`
+> - `Vamos con VEC-XXXX`
 > - `Seguimos con VEC-XXXX`
