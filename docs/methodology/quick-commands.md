@@ -48,7 +48,7 @@ Entorno de trabajo:
 **Lo que ejecuta Claude:**
 
 1. Lee la card en Jira — descripción y comentarios
-2. Identifica a qué módulo pertenece y lee su página en Confluence
+2. Identifica a qué módulo pertenece y lee su página en Confluence **únicamente dentro de la carpeta "Documentación Técnico/Funcional por Módulos"** (ancestor = 1566834691, espacio VFI)
 3. Contrasta:
    - ¿La card introduce comportamiento nuevo no documentado?
    - ¿Contradice algo que la doc establece como correcto?
