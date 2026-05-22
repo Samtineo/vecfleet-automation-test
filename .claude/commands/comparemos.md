@@ -1,7 +1,7 @@
 Analizá la card $ARGUMENTS contra la documentación existente del módulo, sin ejecutar QA.
 
 1. Leé la card en Jira (vecfleet-kanban.atlassian.net) — descripción y comentarios.
-2. Identificá a qué módulo pertenece y leé su página en Confluence (espacio VFI, carpeta "Documentación Técnico/Funcional por Módulos").
+2. Identificá a qué módulo pertenece y buscá su página en Confluence **únicamente dentro de la carpeta "Documentación Técnico/Funcional por Módulos"** (ancestor = 1566834691, espacio VFI). No busques en otras carpetas ni en el resto del espacio.
 3. Contrastá:
    - ¿La card introduce comportamiento nuevo no documentado?
    - ¿Contradice algo que la doc establece como correcto?
