@@ -1915,6 +1915,115 @@
           }
         }
       ]
+    },
+    {
+      "name": "16 - Crons Frotcom AVL (VEC-2060)",
+      "item": [
+        {
+          "name": "POST /crons/logdistance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/crons/logdistance",
+              "host": ["{{url}}"],
+              "path": ["crons", "logdistance"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - logdistance ejecutado', () => pm.response.to.have.status(200));",
+                  "// movilesNoEncontrados > 0 es comportamiento esperado en vec-dev.",
+                  "// Los móviles del config Frotcom no coinciden con los de la cuenta de prueba.",
+                  "pm.test('Respuesta no es error de servidor (500)', () => {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 10000ms', () => pm.expect(pm.response.responseTime).to.be.below(10000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /crons/calculardistancia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/crons/calculardistancia",
+              "host": ["{{url}}"],
+              "path": ["crons", "calculardistancia"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - calculardistancia ejecutado', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta no es error de servidor (500)', () => {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 10000ms', () => pm.expect(pm.response.responseTime).to.be.below(10000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /crons/kmdiario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/crons/kmdiario",
+              "host": ["{{url}}"],
+              "path": ["crons", "kmdiario"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 - kmdiario ejecutado', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta no es error de servidor (500)', () => {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "pm.test('Tiempo de respuesta < 10000ms', () => pm.expect(pm.response.responseTime).to.be.below(10000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
