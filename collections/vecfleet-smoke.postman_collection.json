@@ -2107,6 +2107,78 @@
           ]
         }
       ]
+    },
+    {
+      "name": "19 - Export Personalizado Facturas (VEC-3404)",
+      "item": [
+        {
+          "name": "GET /tickets/facturables/grid/14/0/0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/tickets/facturables/grid/14/0/0",
+              "host": ["{{url}}"],
+              "path": ["tickets", "facturables", "grid", "14", "0", "0"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Retorna array de facturables', () => {",
+                  "        pm.expect(pm.response.json()).to.be.an('array');",
+                  "    });",
+                  "    pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /facturas/exportar-tickets-excel/14/0/0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/facturas/exportar-tickets-excel/14/0/0",
+              "host": ["{{url}}"],
+              "path": ["facturas", "exportar-tickets-excel", "14", "0", "0"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 (export legacy responde)', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiempo de respuesta < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
