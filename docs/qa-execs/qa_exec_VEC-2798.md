@@ -1,105 +1,97 @@
 ---
 name: qa-exec-VEC-2798
-description: "QA Exec para Notificaciones automáticas ante comentarios en tickets (módulo Tickets). Entorno vec.vecfleet.io (TEST histórico, NO producción)."
+description: "QA Exec para Notificaciones automáticas ante comentarios en tickets (módulo Tickets). Entorno vec.vecfleet.io (TEST histórico, NO producción). Resultado PASS."
 metadata:
   type: project
 ---
 
-## Card
+# VEC-2798 — Notificaciones automáticas ante comentarios en tickets
 
-- **VEC-2798** — "Notificaciones automáticas ante comentarios en tickets". Historia, componente **Tickets**.
-- Status: Deployed To Stage. Reporter/creator: Pamela Lettieri. Dev: Ayrton Ortega. QA: stineo.
-- **CA de la card:**
-  1. Al generar un comentario se envía una notificación.
-  2. La notificación incluye el contenido del comentario.
-  3. Los destinatarios reciben la información.
-  4. No hace falta entrar al ticket para enterarse.
-- **Alcance adicional** (mencionado, no formalizado como CA): "permitir configurar destinatarios" y canal email como posibilidad.
+Dev: Ayrton Ortega. Reporter/creator: Pamela Lettieri. QA: stineo. Componente **Tickets**.
+Entorno **vec.vecfleet.io** (TEST verificado, notif system + Firebase activos). QA Report **VEC-3449**. **Resultado PASS.**
+
+> Historial: esta card estuvo diferida (ver MEMORY project_vec2798_pending). Este exec consolida la ejecución final que cierra los OBS previos. Reemplaza la versión anterior (CA2 FAIL / E2E no ejecutado), que quedó saldada.
+
+## CA de la card
+1. Al generar un comentario se envía una notificación.
+2. La notificación incluye el contenido del comentario.
+3. Los destinatarios reciben la información.
+4. No hace falta entrar al ticket para enterarse.
 
 ## Entorno
 
 - **URL base: `vec.vecfleet.io`.**
-- **ATENCIÓN — regla anti-producción:** la URL NO tiene sufijo `-dev`/`-new`/`-hotfix`/`-stage`/`-test`, lo que normalmente dispara la regla crítica de "prohibido testear en producción". En esta card se verificó **explícitamente que `vec.vecfleet.io` es un entorno de TEST histórico, NO producción**, mediante estas señales:
-  - Existe perfil `stineo` (usuario de QA, no de cliente real).
-  - Existen vehículos ficticios con dominio `723*`.
-  - **Firebase habilitado únicamente ahí**, con proyecto `test-notificaciones-vec` (nombre explícito de test).
-  - `notificaciones.push.dry_run=false` (push real habilitado para probar entrega).
-- Motivo por el que se usa este entorno y no vec-dev: **vec-dev tiene la config de Firebase VACÍA** (`firebase-sw.js` con `apiKey:""`), por lo que FCM no entrega push ahí. `vec.vecfleet.io` es el único entorno permitido con Firebase configurado.
+- **ATENCIÓN — regla anti-producción:** la URL NO tiene sufijo `-dev`/`-new`/`-hotfix`/`-stage`/`-test`, lo que normalmente dispara la regla crítica de "prohibido testear en producción". En esta card se verificó **explícitamente que `vec.vecfleet.io` es un entorno de TEST histórico, NO producción** (perfil `stineo` de QA, vehículos ficticios, proyecto Firebase `test-notificaciones-vec`, `notificaciones.push.dry_run=false`). Prod real (`vecfleet.io` sin más) sigue vedada. Confirmar las señales de test **cada vez** antes de ejecutar.
+- Motivo por el que se usa este entorno y no vec-dev: **vec-dev tiene la config de Firebase VACÍA** (`firebase-sw.js` con `apiKey:""`), por lo que FCM no entrega push ahí. `vec.vecfleet.io` es el único entorno permitido con Firebase configurado (notif system + Firebase activos).
 - Auth: `POST /api/public/auth/login` con `usuario`/`clave`; token en `resp.usuario.token` (o `resp.token`). Header en llamadas: `Authorization-Token: <token>`.
 
 ## Prerrequisitos
 
-- Dos usuarios de prueba distintos con acceso al mismo ticket: **stineo** y **Stineo2** (necesarios porque el autor del comentario NO se autonotifica; hace falta un segundo usuario para observar la notificación).
-- Un ticket existente donde ambos usuarios puedan comentar (en esta ejecución: **ticket 8**).
+- Dos usuarios de prueba distintos con acceso al mismo ticket: **stineo** (creador) y **Stineo2** (segundo). Necesarios porque el autor del comentario NO se autonotifica; hace falta un segundo usuario para observar la notificación.
+- Un ticket donde ambos puedan comentar. En esta ejecución: crear un ticket correctivo con payload mínimo (movil + servicio 188 + tarea 265) como stineo. Ticket usado: **4788** (móvil 30075).
 - No requiere permiso especial nuevo para comentar/notificar (la audiencia se resuelve por participación en el ticket, no por permiso).
-- Para probar la **entrega push a dispositivo real**: navegador con Service Worker de Firebase activo y token FCM registrado (`POST /notificaciones/fcm-token`). NO ejecutado en esta corrida (ver Gotchas).
+- Para probar entrega push a dispositivo real: navegador con Service Worker Firebase activo y token FCM registrado. NO ejecutado (ver Gotchas), no bloqueante.
 
 ## Endpoints usados
 
 | Método | Endpoint | Para qué |
 |---|---|---|
 | POST | `/api/public/auth/login` | Autenticación (token en `resp.usuario.token`) |
-| POST | `/api/ticket-comentarios/ticket/{id}` | Crear un comentario en el ticket (dispara el evento) |
-| GET | `/notificaciones/no-leidas/count` | Contador de notificaciones no leídas (señal observable principal) |
-| GET | `/notificaciones` | Listado de notificaciones no leídas (verificar tipo/título/url) |
+| POST | `/api/ticket-comentarios/ticket/{ticketId}` | Crear un comentario en el ticket (dispara el evento). Body `{comentario:"..."}` → 201 |
+| GET | `/api/notificaciones/no-leidas/count` | Contador de no leídas (señal observable principal) |
+| GET | `/api/notificaciones` | Listado de notificaciones (verificar título/cuerpo/url) |
 | POST | `/notificaciones/fcm-token` | Registrar token FCM del dispositivo (solo para push real) |
 | DELETE | `/notificaciones/fcm-token` | Baja del token FCM (apagado global del push) |
 
-## Arquitectura verificada por código (code-verified)
+## Arquitectura verificada por código (namespace `Notifications/`)
 
-Sistema de eventos bajo namespace `Notifications/` (distinto del viejo `Notification/`):
-
-- `TicketsComentariosService::create` (L41) despacha el evento **`ComentarioAgregado`** vía `SynchronousEventDispatcher` → handler **`NotificarParticipantesCuandoHayComentarioHandler`**.
-- El handler se ejecuta **async** dentro de `register_shutdown_function` (tras `fastcgi_finish_request`); no bloquea la respuesta HTTP del POST de comentario.
-- `NotificacionService::notificar` (`Service/NotificacionService.php`) hace **dos cosas por cada destinatario**:
-  1. **Persiste una fila en la tabla `notificaciones`** (centro de notificaciones / campanita in-app). Esta es la **fuente de verdad** y la señal observable por API.
-  2. **Despacha por el canal `CanalFcmPush`** (FCM push al dispositivo).
-- Audiencia **`AudienciaParticipantesTicket`**: todos los usuarios que comentaron en el ticket + el creador del ticket, **excluyendo al autor del comentario nuevo** (no autonotificación).
+- `TicketsComentariosService` al crear comentario despacha evento **`ComentarioAgregado`** (incluye `contenido = $comentario->getComentario()`) vía `SynchronousEventDispatcher`.
+- **`NotificarParticipantesCuandoHayComentarioHandler`**: arma `NotificacionPayload` — titulo `"Nuevo comentario en Ticket #{id}"`, cuerpo `mb_substr($contenido, 0, 140)`, url `/tickets/{id}#comentarios`. Dispara **async** en `register_shutdown_function` (tras `fastcgi_finish_request`; no bloquea la respuesta del POST) con canal `CanalFcmPush`.
+- **`NotificacionService::notificar`** **persiste en la tabla `notificaciones` (fuente de verdad = campanita in-app)** además de enviar por los canales. Constante `MAX_LONGITUD_CUERPO_PUSH = 140`.
+- Audiencia **`AudienciaParticipantesTicket`**: creador + quienes comentaron, **EXCLUYE al autor del comentario nuevo** (no autonotificación).
 - Datos de la notificación persistida: `tipo=COMENTARIO_NUEVO_EN_TICKET`, `titulo="Nuevo comentario en Ticket #{id}"`, `url=/tickets/{id}#comentarios`.
 
-## Casos de prueba
+## Receta de ejecución (reproducible, 100% por API)
 
-Ejecución empírica: `vec.vecfleet.io`, ticket 8, usuarios stineo + Stineo2, 2026-07-01.
+1. Login 2 usuarios (stineo creador, Stineo2 segundo).
+2. Crear ticket correctivo (payload mínimo movil + servicio 188 + tarea 265) como stineo.
+3. Comentar: `POST /api/ticket-comentarios/ticket/{ticketId}` `{comentario:"..."}` (201).
+4. Verificar in-app del destinatario: `GET /api/notificaciones` y `GET /api/notificaciones/no-leidas/count`.
 
-| CA | Escenario | Resultado | Observación |
-|---|---|---|---|
-| 01 | Al generar un comentario se envía notificación (se persiste fila en `notificaciones` + se despacha FCM) | ✅ PASS | Verificado vía `notificaciones` + code-verified del canal FCM |
-| 02 | La notificación incluye el **contenido del comentario** | ❌ FAIL | Cuerpo genérico, no incluye el texto. Ver OBS-01 |
-| 03 | Los destinatarios (participantes) reciben la info | ✅ PASS | Stineo2 comenta → count de stineo pasa a 1 |
-| 04 | No hace falta entrar al ticket (campanita in-app fuera del ticket) | ✅ PASS | `GET /notificaciones` devuelve la notificación sin abrir el ticket |
-| — | Autonotificación: el autor del comentario NO se notifica a sí mismo | ✅ PASS | stineo comenta → su count sigue 0; Stineo2 (autor) count = 0 |
-| — | Alcance: destinatarios configurables | 📋 OBS | No implementado. Ver OBS-02 |
-| — | Entrega push a dispositivo real (FCM) | ⏸️ NO EJECUTADO | Requiere navegador con token FCM. No bloqueante (ver Gotchas) |
+## Casos de prueba (PASS)
 
-### Secuencia E2E ejecutada (reproducible)
+| CA | Verificación | Resultado |
+|----|--------------|-----------|
+| Dispara al comentar | notif in-app id 20 generada (count 2→3) | ✅ |
+| Contenido 140 chars | comentario 202 chars → cuerpo truncado a 140 exactos; 57 chars → completo | ✅ |
+| Título + deep-link | "Nuevo comentario en Ticket #4788", url `/tickets/4788#comentarios` | ✅ |
+| Audiencia | stineo (creador) recibió | ✅ |
+| Autor excluido | Stineo2 (autor) NO se auto-notificó (0) | ✅ |
+| Bidireccional | stineo comenta → Stineo2 (participante) recibió | ✅ |
 
-1. Baseline: `GET /notificaciones/no-leidas/count` para stineo y Stineo2 → **0 / 0**.
-2. **stineo** comenta en ticket 8 (`POST /api/ticket-comentarios/ticket/8`) → count de **stineo sigue 0** (autor excluido).
-3. **Stineo2** comenta en ticket 8 → **count de stineo = 1** (participante notificado); **count de Stineo2 (autor) = 0** (no se autonotifica).
-4. `GET /notificaciones` (stineo) → notificación persistida con `tipo=COMENTARIO_NUEVO_EN_TICKET`, `titulo="Nuevo comentario en Ticket #8"`, `url=/tickets/8#comentarios`.
+## OBS previos saldados
+
+- **OBS-1** (cuerpo sin contenido del comentario) → **RESUELTO**: el cuerpo ahora incluye el comentario, truncado a 140 chars (`mb_substr($contenido, 0, 140)`).
+- **OBS-3** (campanita no cableada) → estaba **desactualizado**; sí persiste in-app (tabla `notificaciones`).
+- **OBS-2** (destinatarios configurables) → **scope acotado** a participantes + creador. No se implementó configuración; queda fuera de alcance de esta card.
+
+## No E2E (no bloqueante)
+
+Entrega del push FCM a device: canal invocado + Firebase configurado en `vec.vecfleet.io`, pero la recepción real necesita hardware. La notificación **in-app (campanita)** es el primario y quedó validada E2E. (Depende del SW FCM de **VEC-3424**, cerrado.)
 
 ## Gotchas
 
-- **Entorno sin sufijo pero es TEST:** `vec.vecfleet.io` dispara la alarma anti-producción por no tener `-dev`. Antes de ejecutar, verificar las señales de test (perfil stineo, dominios `723*`, proyecto Firebase `test-notificaciones-vec`, `notificaciones.push.dry_run=false`). No asumir; confirmar cada vez. Prod real (`vecfleet.io` sin más) sigue vedada.
-- **Método de automatización reusable para regresión (sin navegador):** el E2E se hace **100% por API**, usando la tabla `notificaciones` como señal observable a través de `GET /notificaciones/no-leidas/count` y `GET /notificaciones`. **No requiere Playwright ni FCM.** La campanita in-app es la fuente de verdad; la persistencia en `notificaciones` ocurre siempre que se dispara el evento, independientemente de si el push llega o no.
-- **Autonotificación excluida:** el autor del comentario nuevo NO recibe notificación. Para observar una notificación siempre se necesita un **segundo usuario** que sea participante del ticket.
-- **Handler async post-respuesta:** el envío ocurre en `register_shutdown_function` tras `fastcgi_finish_request`. La notificación puede tardar un instante en persistir después de que el POST de comentario responde 200. Si el count no cambió de inmediato, reintentar el GET.
-- **Push real no verificable por API:** el envío a dispositivo requiere navegador con Service Worker Firebase y token FCM registrado. No se ejecutó. No es bloqueante: la campanita in-app (tabla `notificaciones`) es la fuente de verdad y quedó verificada.
-- **Sin silenciado por ticket:** una vez que un usuario comenta en un ticket, queda suscrito de forma permanente a las notificaciones de ese ticket. El único apagado es global (borrar token FCM / revocar permiso del navegador). Ver OBS-03.
+- **Entorno sin sufijo pero es TEST:** `vec.vecfleet.io` dispara la alarma anti-producción por no tener `-dev`. Verificar señales de test (perfil stineo, dominios ficticios, proyecto Firebase `test-notificaciones-vec`, `notificaciones.push.dry_run=false`) antes de ejecutar. No asumir; confirmar cada vez.
+- **Regresión 100% por API (sin navegador ni FCM):** usar la tabla `notificaciones` como señal observable vía `GET /api/notificaciones/no-leidas/count` y `GET /api/notificaciones`. La persistencia in-app ocurre siempre que se dispara el evento, independientemente de si el push FCM llega.
+- **Autonotificación excluida:** el autor del comentario nuevo NO recibe notificación. Para observar una notificación siempre hace falta un **segundo usuario** participante del ticket.
+- **Handler async post-respuesta:** el envío ocurre en `register_shutdown_function` tras `fastcgi_finish_request`. La notificación puede tardar un instante en persistir después de que el POST de comentario responde. Si el count no cambió de inmediato, reintentar el GET.
+- **Truncado a 140:** cuerpos > 140 chars se cortan exactos en 140 (verificado con comentario de 202 chars). Cuerpos cortos van completos.
+- **Sin silenciado por ticket:** una vez que un usuario comenta en un ticket queda suscrito de forma permanente. El único apagado es global (borrar token FCM / revocar permiso del navegador).
 
-## OBS (levantar con Ayrton/PO)
+## Datos de prueba
 
-- **OBS-01 (CA incumplido):** el cuerpo de la notificación **NO incluye el contenido del comentario**; muestra un texto genérico: *"Alguien comentó en un ticket en el que participás."* El CA 2 pide explícitamente "la notificación incluye el contenido del comentario". Confirmado empíricamente. **Gap de CA.**
-- **OBS-02 (gap vs alcance):** destinatarios **hardcodeados** a los participantes del ticket. El alcance mencionaba "configurar destinatarios"; no existe ninguna configuración para elegirlos. **Gap vs alcance.**
-- **OBS-03 (comportamiento):** **no hay silenciado por ticket.** Una vez que comentás quedás suscrito para siempre; el único apagado es global (borrar token / revocar permiso del navegador). Asimetría con `AudienciaAdministradoresPresupuesto`, que sí respeta la baja de suscripción; `AudienciaParticipantesTicket` no.
-- **Canales entregados:** push FCM + campanita in-app. **NO email** (el alcance lo mencionaba como posibilidad; no se implementó).
-
-## Resultado
-
-**E2E funcional PASS.** La feature entrega el mecanismo de notificación completo (disparo por evento + persistencia en `notificaciones` + despacho FCM), con **2 gaps vs CA/alcance** documentados como OBS para Ayrton/PO:
-- OBS-01: la notificación no incluye el contenido del comentario (incumple CA 2).
-- OBS-02: destinatarios no configurables (gap vs alcance).
+`vec.vecfleet.io`: ticket **4788** (móvil 30075), comentarios de stineo/Stineo2, notif in-app **id 20**.
 
 ## QA Report
 
-VEC-2798 — https://vecfleet-kanban.atlassian.net/browse/VEC-2798
+VEC-3449 — https://vecfleet-kanban.atlassian.net/browse/VEC-3449
