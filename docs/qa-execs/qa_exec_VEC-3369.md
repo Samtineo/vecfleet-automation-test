@@ -1,68 +1,53 @@
 ---
 name: qa-exec-VEC-3369
-description: "QA exec VEC-3369: notificación por email al aprobar ticket que cruza umbral de % de consumo del período. E2E Tickets+PP+Notificaciones. CA de regresión. Estado: NO ejecutado aún (feature en consolidación)."
+description: "QA exec VEC-3369: notificación por alcance de % de presupuesto al aprobar un ticket que cruza el umbral de consumo de la base. Canal = campanita in-app + push FCM (NUNCA email). Estado: PASS en scope (E2E en vec.vecfleet.io). Madre On Hold. Hallazgo fuera de scope: notif acoplada a aprobar()."
 metadata:
   node_type: memory
   type: project
   originSessionId: current
 ---
 
-# VEC-3369 — Notificación por alcance de % preventivo (E2E de regresión)
+# VEC-3369 — Notificación por alcance de % de presupuesto (E2E)
 
-**Qué hace:** al **aprobar un ticket**, el sistema evalúa si `(consumido + comprometido) / presupuesto` de la **base del vehículo** cruza el umbral de una **regla activa con `accion_notificacion=true`** del período vigente. Si lo cruza, **envía email** a los administradores de presupuesto (responsable de base + jerarquía). Si ya notificó ese umbral+período, no re-notifica (anti-spam). PR #2113 (Matías Sosa).
+**Estado (2026-07-01): PASS en scope.** Madre en **On Hold** por decisión del usuario (no se transiciona). QA Report como Tarea separada → Done.
 
-**Es el lado "alerta" del combo PP-Reglas.** El lado "bloqueo" es VEC-3370 (On Hold). Ambos se consolidan en VEC-3377 (Pendiente). La campana in-app depende de VEC-2798 (Ayrton, En Curso) → **solo el canal EMAIL es testeable hoy**.
+**Qué hace:** al **aprobar un ticket**, el sistema evalúa si el consumo (consumido + comprometido) de la **base del vehículo** cruza el umbral de una **regla activa con notificación** del período vigente. Si lo cruza, genera una **notificación** a los administradores de presupuesto (usuarios con permiso `PERIODO_PRESUPUESTARIO_{REGIONES|SUBREGIONES|BASES}_MODIFICAR` sin baja de suscripción). PR #2113 (Matías Sosa).
 
-## Gates (verificados en vec-dev 2026-06-29)
-- ✅ `periodoPresupuestario.habilitado = "true"`.
-- ✅ Regla de notificación existe: config_id=4, **regla id=5 "SoloNotif", umbral 40%, accion_notificacion=true, accion_bloqueo=false, activa**. (También id=9 "Dup A 80" notif a 80%.)
-- ⚠️ `notificaciones.email.modo = "legacy"` (NO hibrido/premium) → routing usa SMTP por defecto. **Riesgo: la entrega real del mail puede no ocurrir.** Confirmar entrega antes de dar PASS.
+**Canal (corrección importante):** el canal es **campanita in-app (tabla `notificaciones`) + push FCM**, por diseño. **NUNCA fue email.** La mención de "email" en versiones anteriores de este exec fue una mala interpretación del feature y queda anulada. El disparo es por el sistema de eventos: `UmbralPresupuestarioAlcanzado` → INSERT en `notificaciones` + push FCM.
 
-## Prerrequisitos para disparar la notificación
-1. `periodos_config` activa con períodos generados (config_id=4 tiene reglas; confirmar que tenga período vigente + bases con presupuesto). NOTA: solo una periodos_config por tenant — verificar que la activa sea la que tiene las reglas.
-2. Una **base con presupuesto asignado** (cascada Región→Subregión→Base, `PATCH /api/presupuestos/{id}`).
-3. Un **vehículo** en esa base, con un **ticket** que tenga presupuesto, cuyo importe al aprobarse haga que `(consumido+comprometido)/asignado` cruce el 40%.
-4. **Destinatario verificable:** la notificación va al responsable de la base + jerarquía. Para verificar por Gmail, asegurar que **stineo@vecfleet.io** (o un buzón accesible) sea responsable/recipiente, con `notificaciones_activas=1`.
+## Resultado por CA
 
-## Pasos E2E (regresión)
-1. Identificar/asignar presupuesto a una base B en el período de config_id=4 (ej. asignar $1000 a B).
-2. Aprobar un ticket de un vehículo de B con presupuesto que lleve el consumo de B a ≥40% (ej. $400) → cruza la regla id=5.
-3. El approve dispara la evaluación (VEC-3369) → INSERT en `notificacion_emails` + `notificacion_email_personas`.
-4. `POST /crons/process-email-group` → mueve a `notificaciones_cola_emails`.
-5. `POST /crons/process-email-queue` → envía SMTP + borra de la cola.
-6. **Verificar:** email recibido (Gmail search del buzón destinatario). Asunto incluye el % alcanzado + link al período.
-7. **Anti-spam:** aprobar otro ticket que mantenga el mismo umbral+período → NO debe re-notificar.
+| CA | Escenario | Resultado | Detalle |
+|----|-----------|-----------|---------|
+| CA1 | Happy path: aprobar ticket que cruza el umbral de la base → se genera la notif | ✅ PASS (empírico) | Notif id 13, validada visualmente por Samuel en la campanita |
+| CA2 | Contenido de la notif: base + % alcanzado + umbral, url a la base | ✅ PASS (empírico) | Título "Umbral presupuestario alcanzado (40%)", cuerpo con base + % + umbral |
+| CA3 | Destinatarios: admins de presupuesto sin baja de suscripción | ✅ PASS (empírico) | stineo y Stineo2 recibieron la notif |
+| CA4 | No-destinatario: usuario sin permiso / con baja de suscripción → no recibe | 📋 Code-verified | `AudienciaAdministradoresPresupuesto` filtra por permiso + suscripción |
+| CA6 | No cruza el umbral → no se genera notif | 📋 Code-verified | `TicketsService::notificarReglasDeUmbral` L1947/L1953 |
+| CA7 | Dedupe: mismo umbral+período ya notificado → no re-notifica | 📋 Code-verified | `notificarReglasDeUmbral` |
 
-## Verificación — gaps conocidos
-- **Sin acceso a DB (DBeaver)** desde el entorno QA actual → no puedo confirmar las filas `notificacion_emails`/cola directamente. Verificación por **Gmail** (el mail final) o pedir a dev/DBeaver.
-- **modo=legacy** → si el SMTP por defecto no entrega a Gmail, el mail no llega aunque la notificación se haya generado. Si no llega, NO asumir bug de VEC-3369: primero descartar el gate de email (subir modo a hibrido o confirmar SMTP).
+## Setup que funcionó (receta) — vec.vecfleet.io (entorno de test)
 
-## CAs sugeridos
-- CA1: aprobar ticket que cruza 40% → llega email con % y link. (regla id=5 notif)
-- CA2: aprobar ticket que NO cruza el umbral → no llega email.
-- CA3: anti-spam — segundo cruce del mismo umbral+período → no re-notifica.
-- CA4: regla solo-bloqueo (id=6, sin notif) → no manda email (no aplica notificación).
-- CA5 (negativo de gate): sin reglas activas / PP deshabilitado → no evalúa.
+- Config PP **86 "TEST GeVilla"**, período activo **1455** (julio), regla **id=1 (40% notif)**.
+- Presupuesto asignado a la base vía `POST /presupuestos/guardar-asignaciones` (cascada Región→SubRegión→Base). **Gotcha:** usar el `presupuesto_id`, NO el id de la base.
+- Ticket correctivo con payload mínimo (`movil:{id}` + servicio + tareas).
+- Presupuesto del ticket queda **Pendiente (201)** → **aprobación MANUAL** `POST /tickets/aprobar/{id}` (204) → dispara la notif.
+- Verificar con `GET /notificaciones` del destinatario (o campanita in-app).
+- **Gotcha entorno:** `periodoPresupuestario.habilitado` se revierte por el sync del maestro (`parametros_clientes`); para dejarlo firme, setear en el maestro.
+- Datos de prueba dejados en vec.vecfleet.io: bases 1161/1175 fondeadas, tickets 4779-4782.
 
-## Estado del setup en vec-dev (2026-06-29 — sesión nocturna, EN CURSO)
+## Hallazgo fuera de scope → ROADMAP (incremental)
 
-Avance grande; cortado en el paso del ticket. **Estado dejado en vec-dev:**
-- **Config 4 "QA-VEC3266": `fecha_inicio` movida de 2026-07-01 → `2026-06-01`** (vía `PUT /periodo-configs/4`). Regeneró los 12 períodos. Período activo HOY = **id 163 (2026-06-01 → 06-30)**. (Restaurar a julio si se quiere, pero conviene dejarlo para terminar el QA.)
-- **Presupuesto asignado $100.000** (monto_general, vía `POST /presupuestos/guardar-asignaciones`) en DOS cadenas del período 163:
-  - Región id5→SubRegión id5→**Base 3 "Test"** (nodos 1949/1954/1956). Base 3 tiene 8 móviles + $2.500 comprometido previo. **← usar esta.**
-  - Región id3→SubRegión id3→Base 9 (nodos 1947/1952/1960). **Base 9 NO tiene móviles → descartada.** (Limpiar si molesta.)
-- **Móvil para el ticket: id 1307 "111HHH"** (Base 3, modelo tipo FURGON).
-- Regla que dispara: id=5 "SoloNotif" 40% notif (config 4). Base 3 está en 2.5% ($2500/$100k) → un ticket de **$40.000** la lleva a 42.5% (cruza 40% notif, bajo 45% bloqueo id=6).
+La notif está **acoplada a `TicketsService::aprobar()`** (L2006), NO al evento genérico "presupuesto comprometido". Queda **muda** en cualquier camino que comprometa presupuesto sin pasar por `aprobar()`:
 
-### BLOCKER donde cortamos
-`POST /tickets` (correctivo, móvil 1307 embebido, servicio id=1, tareas=[]) → **400 sin body**. La validación `TicketsController::validate` (L1655) usa un `V::oneOf` condicional (selectedMoviles/persona/movil/llanta) — sospecha: múltiples ramas pasan vacuísmente y `oneOf` (exactamente una) falla; o `getInstanceFromRequest`/`validateLimitOfParallelTicketsPerService` rechazan algo del objeto móvil. **Próximo paso:** inspeccionar `getInstanceFromRequest` (L? en TicketsController) + probar payload mínimo (quizás mandar `selectedMoviles:[{id:1307}]` en vez de `movil` embebido, o ajustar para que solo UNA rama del oneOf valide). Reusar el body de la colección `vecfleet-api.postman_collection.json` (request "/tickets") como referencia exacta.
+- **Auto-aprobación** de presupuesto (`TicketsPresupuestosService::aprobarPresupuesto`) no llama a `notificarReglasDeUmbral`.
+- **Workflow con auditor TERMINAL** (si `APROBAR_AUDITOR` va directo a APROBADO): el `aprobar` final daría 4031 y la notif no corre. En vec-dev/Heineken el auditor es intermedio → hoy funciona, pero es dependencia frágil del `ticket_workflow` del tenant, no garantizada por config. (Análisis El Alquimista, candidata INC-007.)
+- **Heineken hoy NO bloquea** (no usan auto-aprobación; su flujo con auditor pasa por el `aprobar` final).
 
-### Pasos restantes (post-ticket)
-1. Cargar presupuesto $40.000 al ticket (`POST /ticket-presupuestos/ticket/{id}`; items costo_fijo, ej. item 32 MO Default $1000 × 40). Flujo Heineken (`trabajaConEstadosPresupuesto=true`): presupuesto Pendiente→(auditor)→Aprobado.
-2. Aprobar → comprometido Base 3 = 42.5% → dispara regla id=5 → genera notificación.
-3. `POST /crons/process-email-group` → `POST /crons/process-email-queue`. **Usuario verifica recepción del mail** (revisar a quién llega: responsable de Base 3 + jerarquía; si no llega, ajustar responsable a stineo).
-4. Segundo ticket **$10.001** → total 52.5% → cruza regla id=6 (45% bloqueo) → debe **frenar la aprobación** (de paso prueba si el código de VEC-3370 está desplegado).
+**ROADMAP:** cuando habiliten las notificaciones (push) en el entorno de **Heineken**, re-testear el envío de la notif en ESE entorno (confirmar que el flujo con auditor dispara la notif). Verificación decisiva: `SELECT ... FROM ticket_workflow WHERE accion IN ('APROBAR_AUDITOR','APROBAR')` en Heineken → ¿APROBAR_AUDITOR terminal o intermedio?
 
-Feature en consolidación (VEC-3377 Pendiente supersede VEC-3370; campana in-app = VEC-2798 Ayrton En Curso). Solo canal EMAIL testeable. Buen E2E de regresión (Tickets+PP+Notificaciones).
+## Cierre
+
+QA Report (Tarea → Done). Comentario en la madre con el hallazgo + nota de roadmap, arrobando a Matias Sosa (dev) y Marcelo Vieyra (producto). **Madre On Hold** hasta que el usuario decida cerrarla.
 
 Relacionadas: [[module-periodos-presupuesto]], [[module-notificaciones]], [[qa-exec-VEC-3266]].
